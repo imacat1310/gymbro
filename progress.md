@@ -42,7 +42,14 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-08 (pose speed test, v0.2.0)
+- Decisions (small, reversible, per the CLAUDE.md rule): test MediaPipe **Lite + Full** (skip Heavy and MoveNet); **self-host** models + WASM (offline, no third-party requests). WASM is copied from node_modules at build time (not committed); models are committed (~15 MB).
+- Built a **Pose test** tab: model/processor/camera selectors, live skeleton overlay, HUD (fps, ms/frame, delegate, knee angle), 10 s benchmark with median/p95 and a "Copy results" button. GPU → CPU automatic fallback. Pose assets are cached on first use (Workbox CacheFirst `pose-assets`), not at install.
+- Verified: lint ✅, build ✅; headless Edge smoke test with a fake camera on this Mac: model loads, **58 fps, 17 ms/frame, GPU**. The fake camera shows no person, so detection accuracy is untested.
+- Pending (user): run the benchmark on iPhone (Lite/GPU and Full/GPU, back camera, full body in view) → go/no-go for ADR-001.
+
 ### 2026-10-08 (device check on iPhone)
+- ✅ v0.1.1 confirmed on iPhone: Offline support ✅, airplane-mode launch works. Only Vibration ⚠️ (expected).
 - iPhone result: everything ✅ except **Offline support ⚠️** and **Vibration ⚠️**.
 - Vibration: expected, since iOS Safari has no Vibration API (known limit, ADR-001). The rest timer will use sound + screen flash on iPhone.
 - Offline support: **false warning**. The check ran before the service worker registered (it registers on window load), and the installed iOS app has no reload button. Fixed in v0.1.1: the check waits for `serviceWorker.ready` and re-runs on `controllerchange`.

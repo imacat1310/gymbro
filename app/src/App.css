@@ -37,3 +37,34 @@
   border-radius: 12px;
   background: #000;
 }
+
+.tabs { display: flex; gap: 8px; }
+.tabs button { flex: 1; background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.tabs button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+button.secondary { background: var(--border); color: var(--text); }
+button:disabled { opacity: 0.6; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.controls select {
+  font: inherit; font-size: 1rem; min-height: 40px; padding: 0 8px;
+  border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+}
+
+.stage { position: relative; border-radius: 12px; overflow: hidden; background: #000; }
+.stage[hidden] { display: none; }
+.stage video, .stage canvas { display: block; width: 100%; height: auto; }
+.stage canvas { position: absolute; inset: 0; height: 100%; }
+.stage.mirrored video, .stage.mirrored canvas { transform: scaleX(-1); }
+.hud {
+  position: absolute; left: 8px; top: 8px; display: flex; gap: 6px; flex-wrap: wrap;
+  font-size: 0.8rem; font-variant-numeric: tabular-nums;
+}
+.hud span { background: rgba(15, 23, 42, 0.75); color: #f8fafc; padding: 3px 8px; border-radius: 8px; }
+
+h3 { margin: 16px 0 8px; font-size: 1rem; }
+.table-wrap { overflow-x: auto; margin-bottom: 12px; }
+.results { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.results th, .results td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }

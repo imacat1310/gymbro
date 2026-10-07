@@ -28,6 +28,19 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Pose runtime + models are large: cache on first use instead of at install.
+        globIgnores: ['mediapipe/**', 'models/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => /\/(mediapipe\/wasm|models)\//.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pose-assets',
+              expiration: { maxEntries: 10 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
