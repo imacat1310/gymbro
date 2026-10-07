@@ -23,10 +23,10 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - **Milestone:** internal dogfooding; the team logs real workouts
 
 ## Phase 2: Plan it (weeks 7–10)
-- [ ] Equipment scan: camera flow → Edge Function → vision LLM → review screen
+- [ ] Equipment scan: camera flow → Edge Function → vision LLM → review screen. *Waiting on you: AI provider + backend*
 - [x] Exercise mapping (equipment → performable exercises): deterministic, unit-tested (done early in Phase 1)
-- [ ] Plan builder v1: splits, volume landmarks, intensity mapping, exercise selection, substitutions
-- [ ] LLM-generated plan rationale ("why this exercise")
+- [x] Plan builder v1: splits, volume landmarks, intensity mapping, exercise selection, substitutions, limitations, priority muscles, push/pull balance, session-length fit ([ADR-005](decisions/ADR-005-plan-builder.md)); Plan tab with swaps and day rotation
+- [~] Plan rationale: ✅ templated reasons per exercise. LLM wording deferred (needs AI provider decision)
 - **Milestone:** closed beta (~50 users)
 
 ## Phase 3: See you (weeks 11–15)

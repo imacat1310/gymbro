@@ -8,7 +8,7 @@ Track what's done, what's in progress, and decisions made during production. New
 |---|---|---|
 | 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; waiting on pose results; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
-| 2: Plan it | ⬜ Not started | |
+| 2: Plan it | 🟨 In progress | Plan builder + Plan tab shipped (v0.4.0); equipment scan waits on AI provider |
 | 3: See you | ⬜ Not started | |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
@@ -18,11 +18,10 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Dogfood v0.3.0: log real workouts on iPhone and collect issues
+- Dogfood v0.4.0: build a plan, train with it on iPhone, collect issues
 
 **Next**
-- Phase 2 plan builder (rules engine, no accounts needed)
-- Exercise contraindications + limitations in the profile (needed by the plan builder's safety filter)
+- Phase 3 groundwork that needs no accounts: on-device posture capture + landmark metrics (MediaPipe already runs)
 
 **Waiting on you**
 - Pose speed test results on iPhone (More → Pose speed test → Lite/GPU and Full/GPU → Copy results)
@@ -45,9 +44,16 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-08 | *Autonomous:* plan builder = rules only (LLM later), rotation instead of weekdays, substitution at start ([ADR-005](decisions/ADR-005-plan-builder.md)) | Deterministic, offline, safe; missed days don't break the plan | LLM-written plans, fixed weekdays |
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-08 (Phase 2 plan builder, v0.4.0, autonomous)
+- **Planner** (`lib/planner.ts`, ADR-005): split table, 10 day templates, deterministic scoring, priority muscles, pattern fallbacks, push/pull balancer, session-length fitting, weekly volume floors/ceilings with set reallocation, conservative contraindications (`data/stress.ts`), gym substitution.
+- **Coach review of generated plans caught 6 problems the tests didn't:** band-assisted pull-ups as an intermediate's main lift, bodyweight calf raise beating the machine, the only row dropped in a 45-min plan, a full-body day with no pulling, an over-strong variety penalty, chest at 6 sets/week. All fixed and re-checked; chest now reaches the floor where time allows, and the notes say when it can't.
+- **UI:** Plan tab (setup: days, minutes, up to 3 priority muscles, injuries → plan with reasons, swap alternatives, weekly sets per muscle, notes), Today shows the next plan day with one-tap start (exercises pre-filled with targets), rotation after each finished plan workout, DB v2 (`plans` table; export includes plans).
+- **Verified:** 52 unit tests ✅ (planner: determinism, gym-feasibility for all presets, contraindications, time fit, main lifts kept, priority volume, push ≤ pull for 2–6 days, beginner RPE cap, excludes, alternatives, substitution); lint ✅; build ✅; E2E plan flow light + dark 12/12 ✅; Phase 1 E2E regression 13/13 ✅.
 
 ### 2026-10-08 (Phase 1 "Track it", v0.3.0, built autonomously at the user's request)
 - **App structure:** bottom nav (Today / Gym / History / More), HashRouter, an "active workout" banner on every screen, 3-step onboarding (profile → gym equipment → safety disclaimer).

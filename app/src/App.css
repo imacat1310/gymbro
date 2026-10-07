@@ -228,3 +228,16 @@ button:disabled { opacity: 0.5; }
 .table-wrap { overflow-x: auto; margin-bottom: 12px; }
 .results { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
 .results th, .results td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+
+/* Plan */
+.day-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.next-day { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.plan-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.plan-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.plan-item:last-child { border-bottom: 0; }
+.plan-item-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.plan-item-name { color: var(--text); font-weight: 600; text-decoration: none; }
+.volume-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 16px; margin: 0; }
+.volume-list div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 4px 0; }
+.volume-list dt { text-transform: capitalize; }
+.volume-list dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }

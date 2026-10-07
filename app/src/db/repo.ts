@@ -1,10 +1,13 @@
 // Data access helpers. Components read through useLiveQuery and write through these functions.
 import { EXERCISE_BY_ID } from '../data/exercises'
+import { buildPlan, substituteForGym, type Plan } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
-import { db, uid, type Gym, type SetKind, type SetLog, type Settings } from './db'
+import { db, uid, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type Settings, type StoredPlan } from './db'
 
 export const DEFAULT_PROFILE: Profile = { goal: 'hypertrophy', experience: 'beginner', intensity: 'moderate' }
+
+export const DEFAULT_SCHEDULE: Schedule = { daysPerWeek: 3, sessionMinutes: 60 }
 
 export async function getSettings(): Promise<Settings> {
   return (await db.settings.get('me')) ?? { id: 'me', profile: DEFAULT_PROFILE, onboarded: false }
@@ -43,13 +46,78 @@ export async function getActiveSession() {
   return db.sessions.orderBy('startedAt').reverse().filter((s) => !s.endedAt).first()
 }
 
-export async function startSession(): Promise<string> {
+/** Start a workout: empty, or from a plan day (exercises swapped for what the current gym allows). */
+export async function startSession(fromPlan?: { plan: StoredPlan; dayIndex: number }): Promise<string> {
   const active = await getActiveSession()
   if (active) return active.id
   const s = await getSettings()
   const id = uid()
-  await db.sessions.add({ id, gymId: s.activeGymId, startedAt: Date.now(), entries: [] })
+  let entries: SessionEntry[] = []
+  if (fromPlan) {
+    const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
+    const day = fromPlan.plan.days[fromPlan.dayIndex]
+    entries = day.items.flatMap((item) => {
+      const exerciseId = gym ? substituteForGym(item, gym.equipment, s.limitations ?? []) : item.exerciseId
+      return exerciseId ? [{ key: uid(), exerciseId, target: item.target }] : []
+    })
+  }
+  await db.sessions.add({
+    id, gymId: s.activeGymId, startedAt: Date.now(), entries,
+    planId: fromPlan?.plan.id, dayIndex: fromPlan?.dayIndex,
+  })
   return id
+}
+
+export async function getActivePlan(): Promise<StoredPlan | undefined> {
+  const s = await getSettings()
+  return s.activePlanId ? db.plans.get(s.activePlanId) : undefined
+}
+
+/** Plan days rotate in order: the day after the last finished plan workout. */
+export async function nextPlanDayIndex(plan: StoredPlan): Promise<number> {
+  const last = await db.sessions.orderBy('startedAt').reverse()
+    .filter((x) => x.planId === plan.id && !!x.endedAt && x.dayIndex !== undefined).first()
+  return last ? (last.dayIndex! + 1) % plan.days.length : 0
+}
+
+/** Build a plan from current settings and the active gym, and make it active. */
+export async function generatePlan(): Promise<StoredPlan> {
+  const s = await getSettings()
+  const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
+  const schedule = s.schedule ?? DEFAULT_SCHEDULE
+  const plan: Plan = buildPlan({
+    profile: s.profile,
+    daysPerWeek: schedule.daysPerWeek,
+    sessionMinutes: schedule.sessionMinutes,
+    equipment: gym?.equipment ?? [],
+    limitations: s.limitations ?? [],
+    priorities: s.priorities ?? [],
+  })
+  const stored: StoredPlan = { ...plan, id: uid(), createdAt: Date.now(), gymId: gym?.id }
+  await db.transaction('rw', db.plans, db.settings, async () => {
+    await db.plans.add(stored)
+    await db.settings.put({ ...s, activePlanId: stored.id })
+  })
+  return stored
+}
+
+/** Replace one exercise in a plan; the old one becomes an alternative. */
+export async function swapPlanExercise(planId: string, dayIndex: number, itemIndex: number, exerciseId: string) {
+  const plan = await db.plans.get(planId)
+  const ex = EXERCISE_BY_ID.get(exerciseId)
+  if (!plan || !ex) return
+  const { profile } = await getSettings()
+  const days = structuredClone(plan.days)
+  const item = days[dayIndex].items[itemIndex]
+  const target = defaultTarget(ex, profile)
+  days[dayIndex].items[itemIndex] = {
+    ...item,
+    exerciseId,
+    target: { ...target, sets: item.target.sets },
+    reason: `${item.reason} (your pick)`,
+    alternatives: [item.exerciseId, ...item.alternatives.filter((a) => a !== exerciseId)].slice(0, 4),
+  }
+  await db.plans.update(planId, { days })
 }
 
 export async function addEntry(sessionId: string, exerciseId: string) {
@@ -132,14 +200,14 @@ export async function exerciseHistory(exerciseId: string, excludeSessionId?: str
 export const toLogged = (s: SetLog): LoggedSet => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe })
 
 export async function exportAll() {
-  const [gyms, settings, sessions, sets] = await Promise.all([
-    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(),
+  const [gyms, settings, sessions, sets, plans] = await Promise.all([
+    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(),
   ])
-  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 1, gyms, settings, sessions, sets }
+  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 2, gyms, settings, sessions, sets, plans }
 }
 
 export async function resetAll() {
-  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear()])
+  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear()])
 }
 
 export type { SetKind }

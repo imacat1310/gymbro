@@ -2,6 +2,7 @@ import { NavLink } from 'react-router'
 
 const ICONS = {
   today: 'M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z',
+  plan: 'M9 4h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h5',
   gym: 'M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12',
   history: 'M12 7v5l3 2M21 12a9 9 0 1 1-3-6.7M21 4v4h-4',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
@@ -9,6 +10,7 @@ const ICONS = {
 
 const ITEMS = [
   { to: '/', label: 'Today', icon: ICONS.today },
+  { to: '/plan', label: 'Plan', icon: ICONS.plan },
   { to: '/gym', label: 'Gym', icon: ICONS.gym },
   { to: '/history', label: 'History', icon: ICONS.history },
   { to: '/more', label: 'More', icon: ICONS.more },

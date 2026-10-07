@@ -8,6 +8,7 @@ import { GymPage } from './pages/GymPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { MorePage } from './pages/MorePage'
+import { PlanPage } from './pages/PlanPage'
 import { SessionPage } from './pages/SessionPage'
 import { TodayPage } from './pages/TodayPage'
 import { WelcomePage } from './pages/WelcomePage'
@@ -59,6 +60,7 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<TodayPage />} />
         <Route path="workout" element={<WorkoutPage />} />
+        <Route path="plan" element={<PlanPage />} />
         <Route path="session/:id" element={<SessionPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="exercise/:id" element={<ExercisePage />} />

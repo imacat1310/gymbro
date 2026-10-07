@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { db } from '../db/db'
-import { startSession } from '../db/repo'
+import { EXERCISE_BY_ID } from '../data/exercises'
+import { getActivePlan, nextPlanDayIndex, startSession } from '../db/repo'
 import { formatDate, formatDuration, useActiveGym, useActiveSession, useNow, useSettings } from '../lib/hooks'
 import { GOAL_LABELS } from '../lib/targets'
 import { InstallHint } from '../components/InstallHint'
@@ -15,6 +16,8 @@ export function TodayPage() {
   const active = useActiveSession()
   const navigate = useNavigate()
   const now = useNow(1000)
+  const plan = useLiveQuery(async () => (await getActivePlan()) ?? null, [settings?.activePlanId])
+  const nextDay = useLiveQuery(async () => (plan ? nextPlanDayIndex(plan) : 0), [plan?.id])
   const recent = useLiveQuery(async () => {
     const sessions = await db.sessions.orderBy('startedAt').reverse().filter((s) => !!s.endedAt).limit(20).toArray()
     return Promise.all(sessions.map(async (s) => ({ session: s, sets: await db.sets.where('sessionId').equals(s.id).toArray() })))
@@ -41,11 +44,24 @@ export function TodayPage() {
           <div className="hero-number">{formatDuration(now - active.startedAt)}</div>
           <div>{active.entries.length} exercises · tap to continue</div>
         </Link>
+      ) : plan ? (
+        <section className="card hero-card">
+          <div className="muted small">Next in {plan.splitName}</div>
+          <h2>{plan.days[nextDay ?? 0].name}</h2>
+          <p className="muted small">
+            {plan.days[nextDay ?? 0].items.map((i) => EXERCISE_BY_ID.get(i.exerciseId)?.name).filter(Boolean).join(' · ')}
+          </p>
+          <button className="wide" onClick={async () => { await startSession({ plan, dayIndex: nextDay ?? 0 }); navigate('/workout') }}>
+            Start {plan.days[nextDay ?? 0].name} · ~{plan.days[nextDay ?? 0].estMinutes} min
+          </button>
+          <button className="ghost" onClick={async () => { await startSession(); navigate('/workout') }}>Or start a free workout</button>
+        </section>
       ) : (
         <section className="card hero-card">
           <p>Ready to train?</p>
-          <button className="wide" onClick={async () => { await startSession(); navigate('/workout') }}>Start workout</button>
-          <p className="muted small">Personalised plans come in the next phase. For now, add exercises as you go and GymBro suggests the weight.</p>
+          <Link to="/plan" className="button wide">Build my plan</Link>
+          <button className="secondary wide" onClick={async () => { await startSession(); navigate('/workout') }}>Start a free workout</button>
+          <p className="muted small">Your plan uses your gym's equipment, goal and schedule. In a free workout you add exercises as you go, and GymBro still suggests the weight.</p>
         </section>
       )}
 
