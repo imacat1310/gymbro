@@ -18,10 +18,9 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Push to GitHub, enable Pages, first deploy
+- Install on iPhone + Android from https://imacat1310.github.io/gymbro/ and record the device check results below
 
 **Next**
-- Install on iPhone + Android, run the device check
 - Spike: MediaPipe pose fps in the phone browser
 - Start the exercise and equipment database
 
@@ -45,7 +44,11 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ### 2026-10-08 (GitHub Pages setup)
 - Done: installed `gh`; added the Pages deploy workflow; made the Vite `base` configurable (`/gymbro/` on Pages); verified the build under `/gymbro/` (asset paths, manifest scope, service worker scope); `git init` on `main`.
-- Pending: `gh auth login` (user), create repo, push, enable Pages, then test on phones.
+- Fixed: `~/.config` was owned by root (user ran `sudo chown`); the `gh` token needed the `workflow` scope; ran `gh auth setup-git`.
+- Repo: https://github.com/imacat1310/gymbro (public; commits use the GitHub noreply email).
+- **Live:** https://imacat1310.github.io/gymbro/. First deploy succeeded in about 1m40s; page, manifest, sw.js and icons return 200.
+- Follow-up: the Actions run warns that `configure-pages@v5` / `upload-artifact` target Node 20 (deprecated); bump them when new majors are available.
+- Pending: device check results on iPhone and Android.
 
 ### 2026-10-08 (build: PWA shell)
 - Done: installed Node 26 (Homebrew); scaffolded `app/` (React 19, TS, Vite 8, vite-plugin-pwa 2); generated icons; manifest + auto-updating service worker; install hint (iOS Safari instructions / Android install prompt); **device check screen** (HTTPS, installed mode, service worker, camera + live preview, MediaRecorder, WebGL2, Wake Lock, persistent storage, push, vibration).

@@ -55,4 +55,4 @@ GymBro looks at **your gym** and **your body**, then builds a training plan for 
 
 ## Status
 
-Planning stage. Start with [ROADMAP.md](ROADMAP.md).
+Phase 0. Live app: **https://imacat1310.github.io/gymbro/** · Progress: [progress.md](progress.md) · Plan: [ROADMAP.md](ROADMAP.md)
