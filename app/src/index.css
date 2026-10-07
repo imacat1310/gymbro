@@ -6,7 +6,13 @@
   --border: #e2e8f0;
   --accent: #16a34a;
   --accent-text: #ffffff;
+  --accent-soft: #dcfce7;
   --error: #dc2626;
+  --danger-bg: #fee2e2;
+  --warn: #b45309;
+  --chart-1: #16a34a;
+  --chart-grid: #e2e8f0;
+  --nav-h: 64px;
   color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
@@ -21,7 +27,13 @@
     --border: #334155;
     --accent: #22c55e;
     --accent-text: #052e16;
+    --accent-soft: #14532d;
     --error: #f87171;
+    --danger-bg: #450a0a;
+    --warn: #fbbf24;
+    /* Validated with the dataviz palette checker against the dark card surface. */
+    --chart-1: #16a34a;
+    --chart-grid: #334155;
   }
 }
 
@@ -33,9 +45,12 @@ body {
   color: var(--text);
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
-button {
+a { color: var(--accent); }
+
+button, .button {
   font: inherit;
   font-weight: 600;
   min-height: 44px;
@@ -45,4 +60,20 @@ button {
   background: var(--accent);
   color: var(--accent-text);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+input, select {
+  font: inherit;
+  font-size: 16px; /* prevents iOS zoom on focus */
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 12px;
 }

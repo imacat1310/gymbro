@@ -6,8 +6,8 @@ Track what's done, what's in progress, and decisions made during production. New
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0: Foundations | 🟨 In progress | PWA shell built; next: HTTPS + install on phones |
-| 1: Track it | ⬜ Not started | |
+| 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; waiting on pose results; Supabase deferred |
+| 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
 | 2: Plan it | ⬜ Not started | |
 | 3: See you | ⬜ Not started | |
 | 4: Coach you | ⬜ Not started | |
@@ -18,11 +18,17 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Install on iPhone + Android from https://imacat1310.github.io/gymbro/ and record the device check results below
+- Dogfood v0.3.0: log real workouts on iPhone and collect issues
 
 **Next**
-- Spike: MediaPipe pose fps in the phone browser
-- Start the exercise and equipment database
+- Phase 2 plan builder (rules engine, no accounts needed)
+- Exercise contraindications + limitations in the profile (needed by the plan builder's safety filter)
+
+**Waiting on you**
+- Pose speed test results on iPhone (More → Pose speed test → Lite/GPU and Full/GPU → Copy results)
+- Android device check (if you have one)
+- Decision: backend for sync + rest push notifications (Supabase account?)
+- Decision: vision AI provider + API key for the equipment scan (Phase 2)
 
 **Blocked**
 -
@@ -39,8 +45,19 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-08 (Phase 1 "Track it", v0.3.0, built autonomously at the user's request)
+- **App structure:** bottom nav (Today / Gym / History / More), HashRouter, an "active workout" banner on every screen, 3-step onboarding (profile → gym equipment → safety disclaimer).
+- **Data:** 94 hand-curated exercises (patterns, muscles, cues, equipment requirement groups incl. posture correctives) + 41 equipment items + 5 gym presets + "implies" rules. Dexie DB: gyms, settings, sessions, sets. JSON export and "delete all data".
+- **Progression engine:** Epley e1RM with RPE → RIR, per-equipment increments (5 kg lower barbell, 2.5 kg upper, 2 kg DB…), double progression, hold on high RPE, deload −10% after two missed sessions, within-session adjustment, form-gating hook, warm-up ramps, plate calculator. Default targets from goal/intensity/experience; beginners capped at RPE 8.
+- **Tracker:** add exercises from what your gym allows, suggestion card with the reason, pre-filled steppers, RPE chips ("How did it feel?" for beginners), one-tap logging, warm-up checklist, extra sets, timestamp-based rest timer (sound + flash; vibration on Android), screen kept awake.
+- **History:** workout summaries (duration, sets, volume, PRs, feel rating, next-time suggestions), per-exercise page with an e1RM chart (tap for values) and full history, exercise library for the active gym.
+- **Bugs caught before shipping:** the rest-timer cleanup would have cancelled its own auto-clear; a delayed clear could wipe a newly started rest (now conditional on `restEndsAt`); two lint purity warnings fixed.
+- **Verified:** 38 unit tests ✅ (now also run in CI before deploy), lint ✅, build ✅, headless Edge E2E at iPhone size in light + dark: onboarding → log 3×10 @ 60 kg → summary → next workout suggests **62.5 kg × 6** → chart + tooltip, 13/13 checks, no console errors. Screenshots reviewed.
+- **Not verified:** real-phone feel (rest beep after the screen dims, Wake Lock on iOS), real pose accuracy.
 
 ### 2026-10-08 (pose speed test, v0.2.0)
 - Decisions (small, reversible, per the CLAUDE.md rule): test MediaPipe **Lite + Full** (skip Heavy and MoveNet); **self-host** models + WASM (offline, no third-party requests). WASM is copied from node_modules at build time (not committed); models are committed (~15 MB).
