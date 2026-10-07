@@ -10,7 +10,11 @@ export function DeviceCheck() {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    runDeviceChecks().then(setResults)
+    const rerun = () => runDeviceChecks().then(setResults)
+    rerun()
+    // Re-check once the service worker takes control (first launch of the installed app).
+    navigator.serviceWorker?.addEventListener('controllerchange', rerun)
+    return () => navigator.serviceWorker?.removeEventListener('controllerchange', rerun)
   }, [])
 
   useEffect(() => {

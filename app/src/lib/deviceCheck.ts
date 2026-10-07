@@ -35,8 +35,17 @@ export async function runDeviceChecks(): Promise<CheckResult[]> {
     'Full-screen app, push notifications on iOS', 'Running as installed app',
     'Running in browser tab. Install for the full experience', 'warn'))
 
-  results.push(check('sw', 'Offline support (service worker)', 'serviceWorker' in navigator && !!navigator.serviceWorker.controller,
-    'Offline workouts', 'Active', 'Not active yet (reload once after first visit)', 'warn'))
+  // The service worker registers after window load, so wait for it instead of reading controller immediately.
+  let swActive = false
+  if ('serviceWorker' in navigator) {
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))
+    const reg = await Promise.race([navigator.serviceWorker.ready, timeout])
+    swActive = !!reg?.active
+  }
+  results.push(check('sw', 'Offline support (service worker)', swActive,
+    'Offline workouts',
+    navigator.serviceWorker?.controller ? 'Active: app is cached for offline use' : 'Installed: app is cached for offline use',
+    'Not ready yet. Close and reopen the app', 'warn'))
 
   results.push(check('camera', 'Camera API', !!navigator.mediaDevices?.getUserMedia,
     'Equipment scan, posture scan, form check', 'Available', 'Unavailable'))
@@ -63,7 +72,8 @@ export async function runDeviceChecks(): Promise<CheckResult[]> {
     'Available', isIOS() ? 'Install to home screen first (iOS 16.4+)' : 'Unavailable', 'warn'))
 
   results.push(check('vibrate', 'Vibration', 'vibrate' in navigator,
-    'Haptic rest-end alert', 'Available', 'Unavailable (expected on iPhone)', 'warn'))
+    'Haptic rest-end alert', 'Available',
+    isIOS() ? 'Not supported on iPhone (expected). Sound + screen flash are used instead' : 'Unavailable', 'warn'))
 
   return results
 }

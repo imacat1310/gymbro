@@ -42,6 +42,12 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-08 (device check on iPhone)
+- iPhone result: everything ✅ except **Offline support ⚠️** and **Vibration ⚠️**.
+- Vibration: expected, since iOS Safari has no Vibration API (known limit, ADR-001). The rest timer will use sound + screen flash on iPhone.
+- Offline support: **false warning**. The check ran before the service worker registered (it registers on window load), and the installed iOS app has no reload button. Fixed in v0.1.1: the check waits for `serviceWorker.ready` and re-runs on `controllerchange`.
+- Pending: confirm v0.1.1 on iPhone; Android results.
+
 ### 2026-10-08 (GitHub Pages setup)
 - Done: installed `gh`; added the Pages deploy workflow; made the Vite `base` configurable (`/gymbro/` on Pages); verified the build under `/gymbro/` (asset paths, manifest scope, service worker scope); `git init` on `main`.
 - Fixed: `~/.config` was owned by root (user ran `sudo chown`); the `gh` token needed the `workflow` scope; ran `gh auth setup-git`.
