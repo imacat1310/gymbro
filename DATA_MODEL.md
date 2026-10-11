@@ -84,6 +84,8 @@ posture_finding (
 ### Plan
 ```sql
 plan (id, user_id, gym_id, goal, intensity, split text, weeks int, status, generated_by_version, rationale text)
+-- On the phone today (IndexedDB `plans`, DB v4, ADR-007): + name, schedule {daysPerWeek, sessionMinutes}, priorities[], edited bool, updatedAt.
+-- Several plans per user; Settings.activePlanId picks the active one. Limitations stay on Settings (global).
 plan_day (id, plan_id, week int, day_index int, focus text)   -- 'Upper A', 'Lower B'
 planned_exercise (
   id, plan_day_id, order int, exercise_id,

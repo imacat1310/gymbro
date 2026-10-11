@@ -26,6 +26,7 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - [ ] Equipment scan: camera flow → Edge Function → vision LLM → review screen. *Waiting on you: AI provider + backend*
 - [x] Exercise mapping (equipment → performable exercises): deterministic, unit-tested (done early in Phase 1)
 - [x] Plan builder v1: splits, volume landmarks, intensity mapping, exercise selection, substitutions, limitations, priority muscles, push/pull balance, session-length fit ([ADR-005](decisions/ADR-005-plan-builder.md)); Plan tab with swaps and day rotation
+- [x] Plan library + hand editing: several named plans, switch / duplicate / delete, edit exercises and days, rule warnings ([ADR-007](decisions/ADR-007-plan-library-and-editing.md))
 - [~] Plan rationale: ✅ templated reasons per exercise. LLM wording deferred (needs AI provider decision)
 - **Milestone:** closed beta (~50 users)
 

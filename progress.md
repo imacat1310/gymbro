@@ -8,7 +8,7 @@ Track what's done, what's in progress, and decisions made during production. New
 |---|---|---|
 | 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; pose spike ✅ GO on iPhone; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
-| 2: Plan it | 🟨 In progress | Plan builder + Plan tab shipped (v0.4.0); equipment scan waits on AI provider |
+| 2: Plan it | 🟨 In progress | Plan builder (v0.4.0), plan library + editing (v0.6.0); equipment scan waits on AI provider |
 | 3: See you | 🟨 In progress | Guided posture capture shipped (v0.5.0); metrics/findings next |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
@@ -18,16 +18,17 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Try v0.5.0 posture capture on iPhone (More → Posture scan): does the guidance get you into position, and does the skeleton match?
+- Try on iPhone: v0.5.0 posture capture (More → Posture scan) and v0.6.0 plans (Plan → Plans / Manage plan)
 
 **Next**
-- Plans: change a plan, create several and switch between them (user request, ideas #11)
+- InBody sheet scan (user request, ideas #12): waiting for your choice of approach
 - Phase 3: posture metrics + findings from stored scans
 
 **Waiting on you**
 - Android device check (if you have one)
 - Decision: backend for sync + rest push notifications (Supabase account?)
 - Decision: vision AI provider + API key for the equipment scan (Phase 2)
+- Decision: how to read InBody sheets (on-device OCR vs vision AI vs manual entry)
 
 **Blocked**
 -
@@ -44,12 +45,21 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Plan library + hand editing; rule breaks warn, never block ([ADR-007](decisions/ADR-007-plan-library-and-editing.md)) | User's choice; covers "change" and "different plans" | Library only, edit one plan, block injury conflicts |
 | 2026-10-11 | Posture capture: front camera default, auto-capture, Full-model 5-frame median, landmarks only ([ADR-006](decisions/ADR-006-posture-capture.md)) | Works alone, steadier landmarks, no photos stored | Manual tap, self-timer, single frame, keeping photos |
 | 2026-10-11 | Pose spike **GO** on iPhone (both models ~30 fps); Lite for live use, Full for stills and post-set analysis | Lite has frame-time headroom; Full is at the 33 ms budget but more accurate | Full everywhere, Heavy model |
 | 2026-10-08 | *Autonomous:* plan builder = rules only (LLM later), rotation instead of weekdays, substitution at start ([ADR-005](decisions/ADR-005-plan-builder.md)) | Deterministic, offline, safe; missed days don't break the plan | LLM-written plans, fixed weekdays |
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (plan library + editing, v0.6.0)
+- **User request:** change plans and keep several. Options were presented; the user chose a library with full editing, with rule breaks warned rather than blocked (ADR-007).
+- **Plan tab:** Plans sheet (switch, + New plan), new plan = "Build it for me" or "Start empty", Manage plan (edit, change preferences and rebuild in place, duplicate, delete). Editor: plan name, day name / move / delete, exercise add (picker filtered by the plan's gym) / move / remove, steppers for sets, reps and rest. Today shows the plan's name.
+- **Plan check:** injury conflicts in red on the exercise (always); exercises the gym can't do (info); on edited plans: empty day, too long, under or over volume, push > pull.
+- **DB v4 migration:** invisible leftover copies from earlier rebuilds are removed unless workouts used them (kept as "(earlier)"); plans get a name, schedule and priorities.
+- **Verified:** 87 unit tests ✅ (12 new: edits + checks); lint ✅; build ✅. E2E (headless Edge, phone size) 22/22 ✅: v3→v4 migration (4 checks), build named plan, editor add / sets / remove / reorder / rename, red injury warning, duplicate, Plans sheet, empty plan + empty-day warning, switch, Today label, rebuild in place, delete fallback, no console errors.
+- **InBody scan request** logged (ideas #12); it needs a decision (health data) before building.
 
 ### 2026-10-11 (Phase 3 posture capture, v0.5.0)
 - **More → Posture scan (beta):** intro (setup tips, privacy note, height, camera, spoken guidance) → front, side, back. A live Lite skeleton drives an 8-item checklist: body found, phone level (motion sensor), light, turned correctly, head to feet in view, distance, centred, arms down. The top fix is shown and spoken. Everything passes + still → 3 s beep countdown → 5 frames through Full → median landmarks → review (Retake / Next) → saved.

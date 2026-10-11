@@ -82,6 +82,12 @@ Estimate time = Σ(sets × (set duration + rest)) + warm-up + transitions. If it
 - No more than two consecutive days of heavy spinal loading
 - Beginner RPE cap
 
+### 8b. Plan library and hand edits ([ADR-007](../decisions/ADR-007-plan-library-and-editing.md))
+- Users keep several named plans (each with its own gym, schedule and priority muscles) and switch the active one. Injuries are global.
+- Plans can be built by the rules engine or started empty, then edited by hand: exercises (add, remove, reorder, sets/reps/rest) and days (add, remove, rename, reorder).
+- Hand edits are **never blocked**. The checks above become warnings: injury conflicts in red on the exercise; volume, push/pull, day length and empty days on edited plans.
+- Rebuilding keeps the plan's id and name, so the day rotation continues.
+
 ### 9. LLM layer
 - **Input:** structured plan JSON + user profile + findings.
 - **Output:** short rationale per day and per exercise ("Face pulls are here because your side photo suggests rounded shoulders, and they strengthen your rear delts and lower traps").

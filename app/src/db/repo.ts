@@ -1,6 +1,7 @@
 // Data access helpers. Components read through useLiveQuery and write through these functions.
-import { EXERCISE_BY_ID } from '../data/exercises'
-import { buildPlan, substituteForGym, type Plan } from '../lib/planner'
+import { EXERCISE_BY_ID, type Muscle } from '../data/exercises'
+import { addDay } from '../lib/planEdit'
+import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
 import { db, uid, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
@@ -80,26 +81,100 @@ export async function nextPlanDayIndex(plan: StoredPlan): Promise<number> {
   return last ? (last.dayIndex! + 1) % plan.days.length : 0
 }
 
-/** Build a plan from current settings and the active gym, and make it active. */
-export async function generatePlan(): Promise<StoredPlan> {
+export interface PlanPrefs {
+  name: string
+  schedule: Schedule
+  priorities: Muscle[]
+}
+
+/**
+ * Build a plan from preferences, the profile, injuries and the active gym, and make it active.
+ * With `replaceId` the plan is rebuilt in place (same id and name), so its day rotation and history carry on.
+ */
+export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Promise<StoredPlan> {
   const s = await getSettings()
   const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
-  const schedule = s.schedule ?? DEFAULT_SCHEDULE
   const plan: Plan = buildPlan({
     profile: s.profile,
-    daysPerWeek: schedule.daysPerWeek,
-    sessionMinutes: schedule.sessionMinutes,
+    daysPerWeek: prefs.schedule.daysPerWeek,
+    sessionMinutes: prefs.schedule.sessionMinutes,
     equipment: gym?.equipment ?? [],
     limitations: s.limitations ?? [],
-    priorities: s.priorities ?? [],
+    priorities: prefs.priorities,
   })
-  const stored: StoredPlan = { ...plan, id: uid(), createdAt: Date.now(), gymId: gym?.id }
+  const old = replaceId ? await db.plans.get(replaceId) : undefined
+  const now = Date.now()
+  const stored: StoredPlan = {
+    ...plan,
+    id: old?.id ?? uid(),
+    name: prefs.name.trim() || plan.splitName,
+    createdAt: old?.createdAt ?? now,
+    updatedAt: now,
+    gymId: gym?.id,
+    schedule: prefs.schedule,
+    priorities: prefs.priorities,
+  }
+  await db.transaction('rw', db.plans, db.settings, async () => {
+    await db.plans.put(stored)
+    // The last preferences used become the defaults for the next new plan.
+    await db.settings.put({ ...s, activePlanId: stored.id, schedule: prefs.schedule, priorities: prefs.priorities })
+  })
+  return stored
+}
+
+/** A blank plan with one empty day, to fill in by hand. */
+export async function createEmptyPlan(name: string): Promise<StoredPlan> {
+  const s = await getSettings()
+  const now = Date.now()
+  const stored: StoredPlan = {
+    id: uid(), name: name.trim() || 'My plan', splitName: 'Custom', createdAt: now, updatedAt: now,
+    gymId: s.activeGymId, schedule: s.schedule ?? DEFAULT_SCHEDULE, priorities: [],
+    days: addDay([]), weeklySets: {}, notes: [], edited: true,
+  }
   await db.transaction('rw', db.plans, db.settings, async () => {
     await db.plans.add(stored)
     await db.settings.put({ ...s, activePlanId: stored.id })
   })
   return stored
 }
+
+export async function duplicatePlan(id: string): Promise<StoredPlan | undefined> {
+  const plan = await db.plans.get(id)
+  if (!plan) return
+  const now = Date.now()
+  const copy: StoredPlan = { ...structuredClone(plan), id: uid(), name: `${plan.name} (copy)`, createdAt: now, updatedAt: now }
+  await db.plans.add(copy)
+  await saveSettings({ activePlanId: copy.id })
+  return copy
+}
+
+export const renamePlan = (id: string, name: string) =>
+  db.plans.update(id, { name: name.trim() || 'My plan', updatedAt: Date.now() })
+
+export const setActivePlan = (id: string) => saveSettings({ activePlanId: id })
+
+/** Delete a plan. Past workouts keep their sets; if it was active, the most recently changed plan takes over. */
+export async function deletePlan(id: string) {
+  await db.transaction('rw', db.plans, db.settings, async () => {
+    await db.plans.delete(id)
+    const s = await getSettings()
+    if (s.activePlanId === id) {
+      const next = (await db.plans.toArray()).sort((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt))[0]
+      await db.settings.put({ ...s, activePlanId: next?.id })
+    }
+  })
+}
+
+/** Apply a hand edit (lib/planEdit.ts) to a plan's days. */
+export async function editPlanDays(id: string, edit: (days: PlanDay[]) => PlanDay[]) {
+  const plan = await db.plans.get(id)
+  if (!plan) return
+  const days = edit(plan.days)
+  if (days === plan.days) return
+  await db.plans.update(id, { days, weeklySets: weeklySets(days), edited: true, updatedAt: Date.now() })
+}
+
+export const listPlans = () => db.plans.toArray().then((ps) => ps.sort((a, b) => a.createdAt - b.createdAt))
 
 /** Replace one exercise in a plan; the old one becomes an alternative. */
 export async function swapPlanExercise(planId: string, dayIndex: number, itemIndex: number, exerciseId: string) {

@@ -254,7 +254,7 @@ export const VOLUME: Record<Experience, Record<Intensity, [min: number, max: num
   advanced: { easy: [10, 12], moderate: [12, 16], hard: [16, 20], max: [18, 22] },
 }
 
-const GROUPS: { name: string; muscles: Muscle[] }[] = [
+export const GROUPS: { name: string; muscles: Muscle[] }[] = [
   { name: 'Chest', muscles: ['chest'] },
   { name: 'Back', muscles: ['lats', 'upper_back'] },
   { name: 'Quads', muscles: ['quads'] },
@@ -262,7 +262,7 @@ const GROUPS: { name: string; muscles: Muscle[] }[] = [
   { name: 'Glutes', muscles: ['glutes'] },
 ]
 
-function groupSets(days: PlanDay[], muscles: Muscle[]): number {
+export function groupSets(days: PlanDay[], muscles: Muscle[]): number {
   let n = 0
   for (const d of days) for (const i of d.items) {
     const ex = EXERCISE_BY_ID.get(i.exerciseId)!
@@ -358,8 +358,10 @@ function balanceVolume(days: PlanDay[], input: PlanInput) {
   }
 }
 
-const PUSH: Pattern[] = ['h_push', 'v_push']
-const PULL: Pattern[] = ['h_pull', 'v_pull']
+export const PUSH: Pattern[] = ['h_push', 'v_push']
+export const PULL: Pattern[] = ['h_pull', 'v_pull']
+/** Rear-delt / upper-back accessories that count as pulling for the push/pull balance. */
+export const PULL_BALANCERS = ['face_pull', 'band_pull_apart', 'db_rear_delt_fly', 'reverse_pec_deck', 'inverted_row']
 const patternOf = (i: PlanItem) => EXERCISE_BY_ID.get(i.exerciseId)!.pattern
 
 export function buildPlan(input: PlanInput): Plan {
@@ -407,7 +409,7 @@ export function buildPlan(input: PlanInput): Plan {
   const count = (patterns: Pattern[]) => drafts.reduce((n, d) => n + d.items
     .filter((i) => patterns.includes(patternOf(i))).reduce((a, i) => a + i.target.sets, 0), 0)
   if (count(PUSH) > count(PULL)) {
-    const balancer = ['face_pull', 'band_pull_apart', 'db_rear_delt_fly', 'reverse_pec_deck', 'inverted_row']
+    const balancer = PULL_BALANCERS
       .map((id) => EXERCISE_BY_ID.get(id)!)
       .find((e) => pool.includes(e))
     const day = [...drafts]

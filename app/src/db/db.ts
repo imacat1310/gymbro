@@ -34,8 +34,16 @@ export interface Settings {
 
 export interface StoredPlan extends Plan {
   id: string
+  /** Shown in the plan list, e.g. "Gym PPL" (ADR-007). */
+  name: string
   createdAt: number
+  updatedAt?: number
   gymId?: string
+  /** This plan's own preferences, used when it is rebuilt. Injuries stay global (Settings.limitations). */
+  schedule: Schedule
+  priorities: Muscle[]
+  /** Changed by hand since it was last built: turns on the volume/balance/time checks. */
+  edited?: boolean
 }
 
 /** One exercise slot inside a session. */
@@ -118,5 +126,26 @@ db.version(1).stores({
 })
 db.version(2).stores({ plans: 'id, createdAt' })
 db.version(3).stores({ postureScans: 'id, takenAt' })
+// v4: several named plans (ADR-007). Before this, every rebuild left the previous plan behind, invisible.
+// Those copies are removed unless a workout was started from them; kept ones are marked "(earlier)".
+db.version(4).stores({}).upgrade(async (tx) => {
+  const settings = await tx.table('settings').get('me') as Settings | undefined
+  const sessions = await tx.table('sessions').toArray() as Session[]
+  const used = new Set(sessions.map((x) => x.planId).filter(Boolean))
+  const plans = tx.table('plans')
+  for (const p of await plans.toArray() as StoredPlan[]) {
+    const active = p.id === settings?.activePlanId
+    if (!active && !used.has(p.id)) {
+      await plans.delete(p.id)
+      continue
+    }
+    await plans.put({
+      ...p,
+      name: p.name ?? (active ? p.splitName : `${p.splitName} (earlier)`),
+      schedule: p.schedule ?? settings?.schedule ?? { daysPerWeek: p.days.length, sessionMinutes: 60 },
+      priorities: p.priorities ?? settings?.priorities ?? [],
+    })
+  }
+})
 
 export const uid = () => crypto.randomUUID()

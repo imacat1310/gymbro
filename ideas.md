@@ -18,7 +18,8 @@ Status: 💡 New · 🔍 Evaluating · ✅ Accepted (→ where) · ❌ Rejected 
 | 8 | 2026-10-08 | Exercise demo images/GIFs from free-exercise-db (public domain) | Exercise DB | 💡 New | Hybrid plan in ADR-004 §3 |
 | 9 | 2026-10-08 | Repeat a past workout with one tap ("Do this again") | Session tracker | 💡 New | Cheap bridge until the plan builder ships |
 | 10 | 2026-10-08 | Import from Strong / Hevy CSV exports | Data | 💡 New | Fast onboarding for existing lifters |
-| 11 | 2026-10-11 | Change a plan, or create and keep several different plans and switch between them | Plan | ✅ Accepted (user request) | Next step after posture capture |
+| 11 | 2026-10-11 | Change a plan, or create and keep several different plans and switch between them | Plan | ✅ Accepted (user request) | In progress (ADR-007) |
+| 12 | 2026-10-11 | Scan an InBody result sheet with the camera to fill in body composition (weight, muscle mass, body fat, segmental lean mass) | Profile / Data | 🔍 Evaluating (user request) | Health data: options (on-device OCR vs vision AI vs manual) need the user's choice |
 
 <!-- Template row:
 | N | YYYY-MM-DD | Idea | Area | 💡 New | |

@@ -46,7 +46,7 @@ export function TodayPage() {
         </Link>
       ) : plan ? (
         <section className="card hero-card">
-          <div className="muted small">Next in {plan.splitName}</div>
+          <div className="muted small">Next in {plan.name}</div>
           <h2>{plan.days[nextDay ?? 0].name}</h2>
           <p className="muted small">
             {plan.days[nextDay ?? 0].items.map((i) => EXERCISE_BY_ID.get(i.exerciseId)?.name).filter(Boolean).join(' · ')}
