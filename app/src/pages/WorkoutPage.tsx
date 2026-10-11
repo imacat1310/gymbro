@@ -34,7 +34,7 @@ export function WorkoutPage() {
     }
     if (!confirm('Finish this workout?')) return
     await finishSession(session.id)
-    navigate(`/session/${session.id}`, { replace: true })
+    navigate(`/session/${session.id}`, { replace: true, state: { justFinished: true } })
   }
 
   return (

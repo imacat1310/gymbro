@@ -17,8 +17,8 @@ export default defineConfig({
         name: 'GymBro',
         short_name: 'GymBro',
         description: 'AI personal trainer: equipment scan, posture scan, plans, form check, tracking.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#0e0c0a',
+        background_color: '#0e0c0a',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

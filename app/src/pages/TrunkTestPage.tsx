@@ -111,7 +111,7 @@ export function TrunkTestPage() {
     if (region === 'upper') setStep('lower')
     else {
       const id = await saveAssessment({ type: 'trunk_rotation', takenAt: Date.now(), trunk: { regions: next, offsetDeg: Math.round(offset * 10) / 10 } })
-      navigate(`/more/imbalance?result=${id}`)
+      navigate(`/profile/imbalance?result=${id}`)
     }
   }
 
@@ -179,7 +179,7 @@ export function TrunkTestPage() {
         </section>
       )}
 
-      <Link to="/more/imbalance" className="button secondary">Cancel</Link>
+      <Link to="/profile/imbalance" className="button secondary">Cancel</Link>
     </div>
   )
 }

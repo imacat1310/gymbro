@@ -30,6 +30,15 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - [~] Plan rationale: ✅ templated reasons per exercise. LLM wording deferred (needs AI provider decision)
 - **Milestone:** closed beta (~50 users)
 
+## Design pass (Design.md, 2026-10-11)
+User decisions: Bonfire + pixel theme, dark only; "active level" = character level + weekly activity goal; gym AI scan deferred (manual picking improved instead); theme first.
+- [x] Retro souls theme + Profile tab replaces More ([ADR-012](decisions/ADR-012-bonfire-theme.md))
+- [ ] Today: character level and stats from training, weekly activity goal, goals and badges
+- [ ] Plan: choose a goal per workout day (sport-specific, explosive…), references behind the plan
+- [ ] History: finished plan → goal reached or not (InBody and body scans, start vs end)
+- [ ] Profile: full body report (body scan + InBody + imbalance tests)
+- [ ] Gym: faster manual equipment picking (camera scan waits on the AI-provider decision)
+
 ## Phase 3: See you (weeks 11–15)
 - [x] Pose engine integration (MediaPipe) + capture guidance overlay ([ADR-006](decisions/ADR-006-posture-capture.md)): More → Posture scan, live checklist + spoken cues, auto-capture, landmarks only stored
 - [x] Body composition: InBody sheet scan (on-device OCR) + manual entry, history ([ADR-008](decisions/ADR-008-inbody-scan.md), [features/07](features/07-body-composition.md))

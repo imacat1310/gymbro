@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Link, Outlet, Route, Routes, useLocation } from 'react-router'
+import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { BottomNav } from './components/BottomNav'
 import { UpdateBanner } from './components/UpdateBanner'
 import { formatDuration, useActiveSession, useNow } from './lib/hooks'
@@ -7,13 +7,14 @@ import { ExercisePage } from './pages/ExercisePage'
 import { GymPage } from './pages/GymPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { LibraryPage } from './pages/LibraryPage'
-import { MorePage } from './pages/MorePage'
+import { ProfilePage } from './pages/ProfilePage'
 import { PlanPage } from './pages/PlanPage'
 import { SessionPage } from './pages/SessionPage'
 import { TodayPage } from './pages/TodayPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { WorkoutPage } from './pages/WorkoutPage'
 import './App.css'
+import './theme.css'
 
 // Rarely opened screens load on demand to keep the first load small (the service worker still precaches them).
 const DeviceCheck = lazy(() => import('./components/DeviceCheck').then((m) => ({ default: m.DeviceCheck })))
@@ -55,6 +56,12 @@ function Layout() {
   )
 }
 
+/** Old "More" links (bookmarks, saved E2E paths) now live under Profile. */
+function MoreRedirect() {
+  const { pathname, search } = useLocation()
+  return <Navigate to={pathname.replace(/^\/more/, '/profile') + search} replace />
+}
+
 function Wrap({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="page">
@@ -79,14 +86,15 @@ function App() {
         <Route path="exercise/:id" element={<ExercisePage />} />
         <Route path="gym" element={<GymPage />} />
         <Route path="library" element={<LibraryPage />} />
-        <Route path="more" element={<MorePage />} />
-        <Route path="more/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
-        <Route path="more/posture" element={<PosturePage />} />
-        <Route path="more/posture/:id" element={<PostureReportPage />} />
-        <Route path="more/body" element={<BodyPage />} />
-        <Route path="more/imbalance" element={<ImbalancePage />} />
-        <Route path="more/imbalance/trunk" element={<TrunkTestPage />} />
-        <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="profile/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
+        <Route path="profile/posture" element={<PosturePage />} />
+        <Route path="profile/posture/:id" element={<PostureReportPage />} />
+        <Route path="profile/body" element={<BodyPage />} />
+        <Route path="profile/imbalance" element={<ImbalancePage />} />
+        <Route path="profile/imbalance/trunk" element={<TrunkTestPage />} />
+        <Route path="profile/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
+        <Route path="more/*" element={<MoreRedirect />} />
         <Route path="*" element={<TodayPage />} />
       </Route>
       </Routes>

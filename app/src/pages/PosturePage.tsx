@@ -34,7 +34,7 @@ export function PosturePage() {
   async function finish(views: Partial<Record<PostureView, ViewCapture>>) {
     const id = await savePostureScan({ takenAt: Date.now(), heightCm, camera: facing, views })
     setRunning(false)
-    navigate(`/more/posture/${id}`)
+    navigate(`/profile/posture/${id}`)
   }
 
   if (running) return <PostureCapture facing={facing} voice={voice} onDone={(v) => void finish(v)} onCancel={() => setRunning(false)} />
@@ -88,7 +88,7 @@ export function PosturePage() {
           <ul className="link-list">
             {scans.map((s) => (
               <li key={s.id}>
-                <Link to={`/more/posture/${s.id}`} className="history-row">
+                <Link to={`/profile/posture/${s.id}`} className="history-row">
                   <span>
                     {formatDate(s.takenAt)}
                     <span className="muted small"> · {VIEW_ORDER.filter((v) => s.views[v]).map((v) => VIEW_LABELS[v].title).join(', ')}</span>
@@ -101,7 +101,7 @@ export function PosturePage() {
         </section>
       )}
 
-      <Link to="/more" className="button secondary">Back</Link>
+      <Link to="/profile" className="button secondary">Back</Link>
     </div>
   )
 }

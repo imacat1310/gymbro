@@ -76,11 +76,11 @@ export function ImbalancePage() {
 
       <section className="card stack">
         <h2>Tests</h2>
-        <Link to="/more/posture" className="test-link">
+        <Link to="/profile/posture" className="test-link">
           <b>Posture scan</b>
           <span className="muted small">Standing photos, front, side and back. Alone. {scans ? `${scans} saved.` : ''}</span>
         </Link>
-        <Link to="/more/imbalance/trunk" className="test-link">
+        <Link to="/profile/imbalance/trunk" className="test-link">
           <b>Trunk rotation</b>
           <span className="muted small">Forward bend with the phone on your back. Needs a helper.</span>
         </Link>
@@ -95,7 +95,7 @@ export function ImbalancePage() {
       )}
 
       <p className="muted small">Screening only, not a diagnosis. Stop any test that hurts.</p>
-      <Link to="/more" className="button secondary">Back</Link>
+      <Link to="/profile" className="button secondary">Back</Link>
     </div>
   )
 }

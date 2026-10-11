@@ -5,7 +5,8 @@ const ICONS = {
   plan: 'M9 4h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h5',
   gym: 'M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12',
   history: 'M12 7v5l3 2M21 12a9 9 0 1 1-3-6.7M21 4v4h-4',
-  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  // A knight's helm.
+  profile: 'M5 20v-8a7 7 0 0 1 14 0v8zM5 13h14M12 13v7M9 16h1M14 16h1',
 }
 
 const ITEMS = [
@@ -13,7 +14,7 @@ const ITEMS = [
   { to: '/plan', label: 'Plan', icon: ICONS.plan },
   { to: '/gym', label: 'Gym', icon: ICONS.gym },
   { to: '/history', label: 'History', icon: ICONS.history },
-  { to: '/more', label: 'More', icon: ICONS.more },
+  { to: '/profile', label: 'Profile', icon: ICONS.profile },
 ]
 
 export function BottomNav() {

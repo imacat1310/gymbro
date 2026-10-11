@@ -18,11 +18,11 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Try on iPhone: trunk rotation test with a helper (v0.9.0), posture scan → report (v0.8.0), plans, InBody
+- Design pass (Design.md): v0.13.0 theme + Profile tab done; next is Today (level, activity goal, badges)
 
 **Next**
-- Movement tests, left vs right (single-leg squat first), then the imbalance engine (features/08)
-- Tune the InBody parser on a real sheet photo (personal details covered)
+- Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
+- Movement tests, left vs right, then the imbalance engine (features/08)
 
 **Waiting on you**
 - Android device check (if you have one)
@@ -45,6 +45,8 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Bonfire theme (souls + pixel, dark only), self-hosted OFL fonts, Profile tab replaces More ([ADR-012](decisions/ADR-012-bonfire-theme.md)) | User's choice from three mockups | Pure Souls, full pixel |
+| 2026-10-11 | Design.md scope: level = character level + weekly activity goal; gym AI scan deferred | User's choices | Activity rings only, AI scan now |
 | 2026-10-11 | InBody reader rev. 1: two OCR passes, position-aware parsing, the sheet's arithmetic as a check ([ADR-008](decisions/ADR-008-inbody-scan.md)) | Real 270 sheet: 3/14 with 2 wrong → 12/14 with none wrong | Vision AI (still possible later) |
 | 2026-10-11 | App updates: check on resume + every 30 min, "Update" banner, never auto-reload ([ADR-011](decisions/ADR-011-app-updates.md)) | iPhone stayed on v0.5.0; a reload mid-capture would lose work | Auto-reload, browser default |
 | 2026-10-11 | Imbalance tests area; trunk rotation via phone scoliometer, referral at ≥ 7° ([ADR-010](decisions/ADR-010-trunk-rotation-test.md)) | Best-evidenced phone screen; no images | Back-photo classifiers (weak, no open weights) |
@@ -57,6 +59,16 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (design pass step 1: Bonfire theme + Profile, v0.13.0)
+- **Design.md** (user): new features per tab plus a retro souls look. Presented the plan and 4 decisions; the user chose the Bonfire + pixel theme, both character level and activity goal, deferring the AI gym scan, and theme first.
+- **Theme** (ADR-012):
+  - stone/ember/gold, dark only
+  - Cinzel / EB Garamond / VT323, self-hosted
+  - framed panels with corner studs, ember buttons with pixel shadows, segmented bars, gold diamond title rule
+  - "VICTORY ACHIEVED" banner after finishing a workout
+- **Profile tab** replaces More (body tools first, with the latest InBody values); `/more/*` redirects to `/profile/*`.
+- **Verified:** 175 unit tests ✅; lint ✅; build ✅. Visual tour of 10 screens at iPhone size, no errors. E2E regressions: plans 22/22, trunk 15/15, report 20/20 (tests updated for `/profile` paths and CSS-uppercased headings).
 
 ### 2026-10-11 (InBody 270 body figure, v0.12.0)
 - The user confirmed the InBody 270 format. Added a close-up read of the grey body figure: crop, enlarge 2×, black and white at 3 cut-offs × 2 modes, then vote (rounded to printed precision; "from photo" needs 2+ agreeing reads and a 3:1 margin; otherwise "check" with the rival as an "or …?" button). Trunk/leg proportion check.

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { EXERCISE_BY_ID } from '../data/exercises'
 import { db } from '../db/db'
 import { discardSession, exerciseHistory, toLogged } from '../db/repo'
@@ -12,6 +12,7 @@ const FEELS = ['😫', '😕', '🙂', '😀', '🔥']
 export function SessionPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const justFinished = (useLocation().state as { justFinished?: boolean } | null)?.justFinished
   const now = useNow(1000)
   const data = useLiveQuery(async () => {
     const session = await db.sessions.get(id)
@@ -38,6 +39,12 @@ export function SessionPage() {
 
   return (
     <div className="page">
+      {justFinished && (
+        <div className="souls-banner" role="status">
+          <strong>Victory achieved</strong>
+          <span>{prs.length ? `${prs.length} new record${prs.length > 1 ? 's' : ''} claimed` : 'Rest at the bonfire. You earned it.'}</span>
+        </div>
+      )}
       <header className="page-head">
         <h1>{session.endedAt ? 'Workout summary' : 'Workout'}</h1>
         <p className="muted">{formatDate(session.startedAt)}</p>

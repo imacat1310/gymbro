@@ -136,7 +136,7 @@ export function BodyPage() {
         </section>
       )}
 
-      <Link to="/more" className="button secondary">Back</Link>
+      <Link to="/profile" className="button secondary">Back</Link>
     </div>
   )
 }

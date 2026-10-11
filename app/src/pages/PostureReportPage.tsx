@@ -126,9 +126,9 @@ export function PostureReportPage() {
       </section>
 
       <div className="row">
-        <Link to="/more/posture" className="button secondary">Back</Link>
+        <Link to="/profile/posture" className="button secondary">Back</Link>
         <button className="danger" onClick={async () => {
-          if (confirm('Delete this scan?')) { await deletePostureScan(scan.id); navigate('/more/posture') }
+          if (confirm('Delete this scan?')) { await deletePostureScan(scan.id); navigate('/profile/posture') }
         }}>Delete scan</button>
       </div>
     </div>

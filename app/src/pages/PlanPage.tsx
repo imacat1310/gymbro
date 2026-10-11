@@ -177,7 +177,7 @@ interface FormProps {
 
 function GymNote({ gymName }: { gymName?: string }) {
   return (
-    <p className="muted small">Goal, experience and intensity come from your <Link to="/more">training profile</Link>. Exercises come from the equipment at <Link to="/gym">{gymName ?? 'your gym'}</Link>.</p>
+    <p className="muted small">Goal, experience and intensity come from your <Link to="/profile">training profile</Link>. Exercises come from the equipment at <Link to="/gym">{gymName ?? 'your gym'}</Link>.</p>
   )
 }
 

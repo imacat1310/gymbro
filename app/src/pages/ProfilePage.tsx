@@ -1,7 +1,9 @@
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router'
+import { db } from '../db/db'
 import { ProfileForm } from '../components/ProfileForm'
 import { exportAll, resetAll, saveSettings } from '../db/repo'
-import { useSettings } from '../lib/hooks'
+import { formatDate, useSettings } from '../lib/hooks'
 
 async function downloadExport() {
   const data = await exportAll()
@@ -14,12 +16,38 @@ async function downloadExport() {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function MorePage() {
+export function ProfilePage() {
   const settings = useSettings()
+  const latestBody = useLiveQuery(() => db.bodyComps.orderBy('measuredAt').last(), [])
+  const scans = useLiveQuery(() => db.postureScans.count(), [])
+  const tests = useLiveQuery(() => db.assessments.count(), [])
+  const v = latestBody?.values
 
   return (
     <div className="page">
-      <header className="page-head"><h1>More</h1></header>
+      <header className="page-head">
+        <h1>Profile</h1>
+        <p className="muted">Your body, your training, your data</p>
+      </header>
+
+      <section className="card stack">
+        <h2>Body</h2>
+        <Link to="/profile/body" className="test-link">
+          <b>Body composition</b>
+          <span className="muted small">
+            {v ? `Latest ${formatDate(latestBody!.measuredAt)} · ${[v.weightKg && `${v.weightKg} kg`, v.smmKg && `muscle ${v.smmKg} kg`, v.pbf && `fat ${v.pbf}%`].filter(Boolean).join(' · ')}`
+              : 'Scan an InBody sheet or enter your results.'}
+          </span>
+        </Link>
+        <Link to="/profile/posture" className="test-link">
+          <b>Posture scan</b>
+          <span className="muted small">{scans ? `${scans} saved · ` : ''}Front, side and back photos; only body points are kept.</span>
+        </Link>
+        <Link to="/profile/imbalance" className="test-link">
+          <b>Imbalance tests</b>
+          <span className="muted small">{tests ? `${tests} saved · ` : ''}Trunk rotation and, soon, left-vs-right movement tests.</span>
+        </Link>
+      </section>
 
       {settings && (
         <section className="card stack">
@@ -30,17 +58,9 @@ export function MorePage() {
       )}
 
       <section className="card stack">
-        <h2>Body</h2>
-        <p className="muted small">Body composition and posture. Everything stays on this phone; photos aren't saved.</p>
-        <Link to="/more/body" className="button">Body composition (InBody)</Link>
-        <Link to="/more/imbalance" className="button secondary">Imbalance tests</Link>
-        <Link to="/more/posture" className="button secondary">Posture scan (beta)</Link>
-      </section>
-
-      <section className="card stack">
         <h2>Phone checks</h2>
-        <Link to="/more/device" className="button secondary">Device check</Link>
-        <Link to="/more/pose" className="button secondary">Pose speed test</Link>
+        <Link to="/profile/device" className="button secondary">Device check</Link>
+        <Link to="/profile/pose" className="button secondary">Pose speed test</Link>
       </section>
 
       <section className="card stack">
