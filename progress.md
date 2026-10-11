@@ -18,7 +18,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Design pass (Design.md): v0.13.0 theme + Profile tab done; next is Today (level, activity goal, badges)
+- Design pass (Design.md): sci-fi HUD theme (v0.14.0) + Profile tab done; next is Today (level, activity goal, badges)
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -29,6 +29,10 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 - Decision: backend for sync + rest push notifications (Supabase account?)
 - Decision: vision AI provider + API key for the equipment scan (Phase 2)
 - A photo of a real InBody sheet (cover name/ID) to test OCR accuracy
+
+**Known gaps**
+- Body data doesn't feed the plan yet (posture findings, InBody, trunk test): that's "Plan builder v2" on the roadmap.
+- SAFETY_PRIVACY.md says a referral pauses related heavy exercises until acknowledged; not implemented yet (needed before plan builder v2 uses findings).
 
 **Blocked**
 -
@@ -45,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Sci-fi HUD theme replaces Bonfire ([ADR-013](decisions/ADR-013-scifi-hud-theme.md)) | User asked for futuristic; chose HUD from three mockups | Cyberpunk neon, sleek glass |
 | 2026-10-11 | Bonfire theme (souls + pixel, dark only), self-hosted OFL fonts, Profile tab replaces More ([ADR-012](decisions/ADR-012-bonfire-theme.md)) | User's choice from three mockups | Pure Souls, full pixel |
 | 2026-10-11 | Design.md scope: level = character level + weekly activity goal; gym AI scan deferred | User's choices | Activity rings only, AI scan now |
 | 2026-10-11 | InBody reader rev. 1: two OCR passes, position-aware parsing, the sheet's arithmetic as a check ([ADR-008](decisions/ADR-008-inbody-scan.md)) | Real 270 sheet: 3/14 with 2 wrong → 12/14 with none wrong | Vision AI (still possible later) |
@@ -59,6 +64,12 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (sci-fi HUD theme, v0.14.0)
+- User asked for a futuristic theme instead of the souls theme; chose "Sci-fi HUD" from three mockups (ADR-013).
+- Navy-black with a cyan grid and glow, corner-bracket panels, angled buttons, Orbitron / Exo 2 / Share Tech Mono (self-hosted OFL), segmented glowing gauges, "MISSION COMPLETE" banner with scan sweep.
+- **Verified:** 175 unit tests ✅; lint ✅; build ✅; visual tour at iPhone size, no errors; E2E plans 22/22, trunk 15/15, report 20/20.
+- **User asked how the body report relates to the plan:** answered honestly that body data doesn't feed the plan yet (only injuries and the priority muscles you pick); recorded as a known gap, plus the unimplemented referral pause.
 
 ### 2026-10-11 (design pass step 1: Bonfire theme + Profile, v0.13.0)
 - **Design.md** (user): new features per tab plus a retro souls look. Presented the plan and 4 decisions; the user chose the Bonfire + pixel theme, both character level and activity goal, deferring the AI gym scan, and theme first.

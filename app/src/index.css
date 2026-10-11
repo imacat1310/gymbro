@@ -1,35 +1,35 @@
-/* Bonfire theme (ADR-012): stone, ember and gold; dark only. */
+/* Sci-fi HUD theme (ADR-013): deep navy, cyan glow, data readouts; dark only. */
 :root {
-  --bg: #0e0c0a;
-  --bg-deep: #090807;
-  --card: #18140f;
-  --card-2: #1f1a14;
-  --text: #e8dcc4;
-  --muted: #9c8c72;
-  --border: #3b3024;
-  --gold: #c9a24a;
-  --gold-dim: #6e5a33;
-  --accent: #e8742a;
-  --accent-hi: #f59a4c;
-  --accent-deep: #7a3410;
-  --accent-text: #1a0b03;
-  --accent-soft: #3a1f0e;
-  --error: #e05a4c;
-  --danger-bg: #2c100c;
-  --warn: #e0a530;
-  --sev-ok: #8fb35a;
-  --sev-mild: #dcb440;
-  --sev-moderate: #e8742a;
-  --sev-marked: #e05a4c;
-  --chart-1: #e8742a;
-  --chart-grid: #2d251c;
+  --bg: #05080f;
+  --bg-deep: #020409;
+  --card: #08111d;
+  --card-2: #0c1828;
+  --text: #d8f1fb;
+  --muted: #7391a8;
+  --border: #173049;
+  --hud: #22d3ee;
+  --hud-dim: #12556a;
+  --accent: #22d3ee;
+  --accent-hi: #67e8f9;
+  --accent-deep: #0e7490;
+  --accent-text: #021018;
+  --accent-soft: #072634;
+  --error: #f43f5e;
+  --danger-bg: #24070f;
+  --warn: #fbbf24;
+  --sev-ok: #34d399;
+  --sev-mild: #facc15;
+  --sev-moderate: #fb923c;
+  --sev-marked: #f43f5e;
+  --chart-1: #22d3ee;
+  --chart-grid: #12263a;
   --nav-h: 64px;
-  --font-body: 'EB Garamond', Georgia, 'Times New Roman', serif;
-  --font-title: 'Cinzel', 'EB Garamond', Georgia, serif;
-  --font-pixel: 'VT323', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-body: 'Exo 2', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-title: 'Orbitron', 'Exo 2', system-ui, sans-serif;
+  --font-data: 'Share Tech Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   color-scheme: dark;
   font-family: var(--font-body);
-  font-size: 17px;
+  font-size: 16px;
   -webkit-text-size-adjust: 100%;
 }
 

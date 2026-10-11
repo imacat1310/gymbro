@@ -1,7 +1,7 @@
 # ADR-012: Bonfire theme (retro souls look) and Profile tab
 
 - **Date:** 2026-10-11
-- **Status:** Accepted (user chose "Bonfire + pixel", dark only, theme first)
+- **Status:** Visual design superseded by [ADR-013](ADR-013-scifi-hud-theme.md) (sci-fi HUD), same day. The Profile tab and dark-only decision still stand.
 - **Roadmap item:** Design pass (Design.md), step 1
 
 ## Context

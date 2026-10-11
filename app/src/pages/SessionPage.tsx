@@ -40,9 +40,9 @@ export function SessionPage() {
   return (
     <div className="page">
       {justFinished && (
-        <div className="souls-banner" role="status">
-          <strong>Victory achieved</strong>
-          <span>{prs.length ? `${prs.length} new record${prs.length > 1 ? 's' : ''} claimed` : 'Rest at the bonfire. You earned it.'}</span>
+        <div className="hud-banner" role="status">
+          <strong>Mission complete</strong>
+          <span>{prs.length ? `${prs.length} new record${prs.length > 1 ? 's' : ''} logged` : 'Recovery protocol: refuel, hydrate, sleep.'}</span>
         </div>
       )}
       <header className="page-head">
