@@ -19,6 +19,8 @@ const DeviceCheck = lazy(() => import('./components/DeviceCheck').then((m) => ({
 const PoseTest = lazy(() => import('./components/PoseTest').then((m) => ({ default: m.PoseTest })))
 const BodyPage = lazy(() => import('./pages/BodyPage').then((m) => ({ default: m.BodyPage })))
 const PosturePage = lazy(() => import('./pages/PosturePage').then((m) => ({ default: m.PosturePage })))
+const ImbalancePage = lazy(() => import('./pages/ImbalancePage').then((m) => ({ default: m.ImbalancePage })))
+const TrunkTestPage = lazy(() => import('./pages/TrunkTestPage').then((m) => ({ default: m.TrunkTestPage })))
 const PostureReportPage = lazy(() => import('./pages/PostureReportPage').then((m) => ({ default: m.PostureReportPage })))
 
 /** Shown on every screen except the workout itself, so an active session is never lost. */
@@ -79,6 +81,8 @@ function App() {
         <Route path="more/posture" element={<PosturePage />} />
         <Route path="more/posture/:id" element={<PostureReportPage />} />
         <Route path="more/body" element={<BodyPage />} />
+        <Route path="more/imbalance" element={<ImbalancePage />} />
+        <Route path="more/imbalance/trunk" element={<TrunkTestPage />} />
         <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
         <Route path="*" element={<TodayPage />} />
       </Route>

@@ -7,16 +7,7 @@ import { saveSettings, savePostureScan } from '../db/repo'
 import { unlockAudio, unlockSpeech } from '../lib/alerts'
 import { VIEW_LABELS, VIEW_ORDER, type PostureView } from '../lib/capture'
 import { formatDate, useSettings } from '../lib/hooks'
-
-/** iOS asks for motion-sensor access, and only from a tap. Other platforms have no prompt. */
-async function requestMotionPermission() {
-  const DM = window.DeviceMotionEvent as unknown as { requestPermission?: () => Promise<string> } | undefined
-  try {
-    await DM?.requestPermission?.()
-  } catch {
-    // Denied or unsupported: the level check shows as "can't check" and capture still works.
-  }
-}
+import { requestMotionPermission } from '../lib/motion'
 
 export function PosturePage() {
   const settings = useSettings()

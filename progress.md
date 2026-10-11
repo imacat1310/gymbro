@@ -9,7 +9,7 @@ Track what's done, what's in progress, and decisions made during production. New
 | 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; pose spike ✅ GO on iPhone; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
 | 2: Plan it | 🟨 In progress | Plan builder (v0.4.0), plan library + editing (v0.6.0); equipment scan waits on AI provider |
-| 3: See you | 🟨 In progress | Posture capture (v0.5.0), InBody (v0.7.0), posture report (v0.8.0); plan builder v2 next |
+| 3: See you | 🟨 In progress | Posture capture (v0.5), InBody (v0.7), posture report (v0.8), trunk rotation test (v0.9); movement tests next |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
 
@@ -18,11 +18,10 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Try on iPhone: a full posture scan → report (v0.8.0), plans (v0.6.0), InBody scan (v0.7.0)
-- Research: open-source biomechanics scanners (user request, ideas #13)
+- Try on iPhone: trunk rotation test with a helper (v0.9.0), posture scan → report (v0.8.0), plans, InBody
 
 **Next**
-- Phase 3: plan builder v2 (posture muscle focus → plan priorities and corrective blocks)
+- Movement tests, left vs right (single-leg squat first), then the imbalance engine (features/08)
 - Tune the InBody parser on a real sheet photo (personal details covered)
 
 **Waiting on you**
@@ -46,6 +45,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Imbalance tests area; trunk rotation via phone scoliometer, referral at ≥ 7° ([ADR-010](decisions/ADR-010-trunk-rotation-test.md)) | Best-evidenced phone screen; no images | Back-photo classifiers (weak, no open weights) |
 | 2026-10-11 | Posture metrics computed on the fly from landmarks, tilt-corrected, confidence-gated, with referral rules and muscle focus ([ADR-009](decisions/ADR-009-posture-metrics.md)) | Deterministic, private, improves old scans | Storing findings, LLM review |
 | 2026-10-11 | InBody scan: on-device OCR (Tesseract.js, self-hosted) + mandatory review; values only stored ([ADR-008](decisions/ADR-008-inbody-scan.md)) | User's choice; private, offline, free | Manual only, vision AI via backend |
 | 2026-10-11 | Plan library + hand editing; rule breaks warn, never block ([ADR-007](decisions/ADR-007-plan-library-and-editing.md)) | User's choice; covers "change" and "different plans" | Library only, edit one plan, block injury conflicts |
@@ -55,6 +55,13 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (imbalance tests + trunk rotation, v0.9.0)
+- **Research** (user request: reuse open-source biomechanics scanners): no drop-in project. SMPL/SHAPY-family are non-commercial and heavy; scoliosis photo models have no weights or licence and reach only about 75% clinical accuracy; DigitalScale estimates BMI only; no open data on scapular winging. Worth using: phone scoliometer (well supported), Navy tape formula, free-exercise-db (public domain), our own cited finding → muscle table, MediaPipe segmentation (experimental).
+- **User's goal clarified:** per-side imbalance in posing *and* movement → tight/weak muscles → stretches and strengthening, weaker side first. Captured in features/08 and the roadmap.
+- **Built:** More → Imbalance tests (posture scan, trunk rotation, history). Trunk rotation: intro → flat-surface calibration → upper back → lower back (live angle, side, peak, reset) → result with grade, referral card at 7° or more, symmetric core advice. DB v6 `assessments`, export v6. Motion permission code shared with the posture scan (`lib/motion.ts`).
+- **Verified:** 149 unit tests ✅ (17 new); lint ✅; build ✅. E2E with simulated motion sensor 15/15 ✅: calibration cancels a 1.5° camera bump, 8.0° right / 3.0° left read exactly with **both gravity sign conventions**, referral card, no condition named, saved with offset, no-sensor message.
+- **Not verified:** on a real iPhone with a real back.
 
 ### 2026-10-11 (posture report, v0.8.0)
 - **Posture report** (More → Posture scan → a scan, or straight after saving one):

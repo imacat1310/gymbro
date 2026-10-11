@@ -33,6 +33,7 @@ export function MorePage() {
         <h2>Body</h2>
         <p className="muted small">Body composition and posture. Everything stays on this phone; photos aren't saved.</p>
         <Link to="/more/body" className="button">Body composition (InBody)</Link>
+        <Link to="/more/imbalance" className="button secondary">Imbalance tests</Link>
         <Link to="/more/posture" className="button secondary">Posture scan (beta)</Link>
       </section>
 

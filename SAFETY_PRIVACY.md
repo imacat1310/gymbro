@@ -8,6 +8,7 @@ GymBro is a **fitness and wellness** app, **not a medical device**. Every postur
   - Marked asymmetry beyond thresholds (e.g. shoulder height difference > 2.5 cm with trunk lateral shift, which may suggest scoliosis)
   - User-reported pain ≥ 4/10, numbness, tingling, or pain that worsens with training
   - Post-surgery or pregnancy flags
+  - Trunk rotation of 7° or more in the forward-bend test (5–6.9°: suggest a re-test) ([ADR-010](decisions/ADR-010-trunk-rotation-test.md))
 - PAR-Q+ style readiness questionnaire at onboarding.
 - The terms of service state that this is not medical advice and that users train at their own risk.
 

@@ -34,6 +34,9 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - [x] Pose engine integration (MediaPipe) + capture guidance overlay ([ADR-006](decisions/ADR-006-posture-capture.md)): More → Posture scan, live checklist + spoken cues, auto-capture, landmarks only stored
 - [x] Body composition: InBody sheet scan (on-device OCR) + manual entry, history ([ADR-008](decisions/ADR-008-inbody-scan.md), [features/07](features/07-body-composition.md))
 - [x] Posture scan: 3-view capture, landmark metrics, findings, report ([ADR-009](decisions/ADR-009-posture-metrics.md)): tilt-corrected metrics, confidence, referral rules, muscle focus
+- [x] Imbalance tests area + trunk rotation test (forward bend, phone as scoliometer) ([ADR-010](decisions/ADR-010-trunk-rotation-test.md), [features/08](features/08-imbalance-tests.md))
+- [ ] Movement tests, left vs right: single-leg squat, then overhead squat and overhead reach
+- [ ] Imbalance engine: all findings → per-side tight/weak muscles → stretches + strengthening, weaker side first
 - [ ] Plan builder v2: corrective / weak-point blocks driven by findings
 - [ ] Re-scan comparison view
 - **Milestone:** public beta

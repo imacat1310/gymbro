@@ -341,3 +341,14 @@ button:disabled { opacity: 0.5; }
 .sev-chip.sev-marked { color: var(--sev-marked); }
 .finding p { margin: 0; line-height: 1.4; }
 .focus-chips .chip { display: inline-flex; align-items: center; text-transform: capitalize; }
+
+/* Imbalance tests */
+.test-link { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); text-decoration: none; }
+.section-title { margin: 4px 0 -4px; }
+.big-angle { font-size: 3.2rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.big-angle.grade-normal { color: var(--sev-ok); }
+.big-angle.grade-borderline { color: var(--sev-mild); }
+.big-angle.grade-refer { color: var(--sev-marked); }
+.big-angle.grade-none { font-size: 1.3rem; color: var(--muted); }
+.center { text-align: center; }
+.peak-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }

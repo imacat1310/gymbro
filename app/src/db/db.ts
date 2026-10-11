@@ -5,6 +5,7 @@ import type { Muscle } from '../data/exercises'
 import type { Area } from '../data/stress'
 import type { PostureView, Tilt } from '../lib/capture'
 import type { InBodyField, InBodyValues } from '../lib/inbody'
+import type { TrunkResult } from '../lib/trunk'
 import type { Plan } from '../lib/planner'
 import type { Profile, Target } from '../lib/targets'
 
@@ -121,6 +122,14 @@ export interface BodyComp {
   createdAt: number
 }
 
+/** An imbalance test result (ADR-010). `type` leaves room for the movement tests that follow. */
+export interface Assessment {
+  id: string
+  type: 'trunk_rotation'
+  takenAt: number
+  trunk: TrunkResult
+}
+
 export const db = new Dexie('gymbro') as Dexie & {
   gyms: EntityTable<Gym, 'id'>
   settings: EntityTable<Settings, 'id'>
@@ -129,6 +138,7 @@ export const db = new Dexie('gymbro') as Dexie & {
   plans: EntityTable<StoredPlan, 'id'>
   postureScans: EntityTable<PostureScan, 'id'>
   bodyComps: EntityTable<BodyComp, 'id'>
+  assessments: EntityTable<Assessment, 'id'>
 }
 
 db.version(1).stores({
@@ -161,5 +171,6 @@ db.version(4).stores({}).upgrade(async (tx) => {
   }
 })
 db.version(5).stores({ bodyComps: 'id, measuredAt' })
+db.version(6).stores({ assessments: 'id, type, takenAt' })
 
 export const uid = () => crypto.randomUUID()
