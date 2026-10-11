@@ -3,7 +3,8 @@
 import { EXERCISE_BY_ID, EXERCISES, PATTERN_LABELS, performableExercises, type Exercise, type Muscle, type Pattern } from '../data/exercises'
 import { isContraindicated, type Area } from '../data/stress'
 import type { BodyPlanInput } from './bodyInput'
-import { ADVANCED_ONLY, FOCUS, focusTarget, type FocusId } from './focus'
+import type { WhyCode } from './coach/why'
+import { ADVANCED_ONLY, FOCUS, focusTarget, type FocusId, type SlotKind } from './focus'
 import { defaultTarget, type Experience, type Intensity, type Profile, type Target } from './targets'
 
 export type Role = 'main' | 'secondary' | 'accessory'
@@ -34,6 +35,8 @@ export interface PlanItem {
   corrective?: boolean
   /** Prescribed by a session focus (ADR-015): its sets are part of the method, so no volume top-ups. */
   fixed?: boolean
+  /** The rules behind this item, for the "Why?" panel (lib/coach/why.ts). */
+  why?: WhyCode[]
 }
 
 export interface PlanDay {
@@ -390,6 +393,24 @@ function correctiveTarget(ex: Exercise): Target {
  * (for beginners) isn't advanced-only. Power and the first three injury-prevention slots survive time trimming
  * (each sport lists its prevention work by injury risk).
  */
+const ANKLE_IDS = ['single_leg_calf_raise', 'db_calf_raise', 'bodyweight_calf_raise', 'single_leg_balance', 'pogo_jump']
+const HAMSTRING_IDS = ['nordic_curl', 'lying_leg_curl', 'seated_leg_curl', 'db_single_leg_rdl']
+const SHOULDER_IDS = ['band_external_rotation', 'face_pull', 'prone_y_raise']
+
+/** Which rule explains a focus-day exercise. */
+function focusWhy(kind: SlotKind, id: string): WhyCode {
+  if (kind === 'plyo') return 'focus_plyo'
+  if (kind === 'power') return 'focus_power'
+  if (kind === 'strength' || kind === 'strength2') return 'focus_strength'
+  if (kind === 'mobility') return 'focus_mobility'
+  if (kind === 'conditioning' || kind === 'endurance' || kind === 'carry') return 'focus_conditioning'
+  if (ANKLE_IDS.includes(id)) return 'focus_ankle'
+  if (HAMSTRING_IDS.includes(id)) return 'focus_hamstring'
+  if (id === 'copenhagen_plank') return 'focus_groin'
+  if (SHOULDER_IDS.includes(id)) return 'focus_shoulder'
+  return 'focus_prehab'
+}
+
 function focusItems(focus: FocusId, input: PlanInput, used: Set<string>): PlanItem[] {
   const can = new Set(performableExercises(input.equipment).filter((e) => !isContraindicated(e.id, input.limitations)).map((e) => e.id))
   const items: PlanItem[] = []
@@ -409,6 +430,7 @@ function focusItems(focus: FocusId, input: PlanInput, used: Set<string>): PlanIt
       alternatives: ok.slice(1, 4),
       keep: protect || undefined,
       fixed: true,
+      why: [focusWhy(slot.kind, ex.id)],
     })
   }
   return items
@@ -461,6 +483,7 @@ export function buildPlan(input: PlanInput): Plan {
         target: targetFor(choice.exercise, slot.role, input.profile),
         reason: reasonFor(choice.exercise, slot),
         alternatives: choice.alternatives,
+        why: [slot.reason?.startsWith('Priority') ? 'priority' : slot.reason?.startsWith('Strengthens') ? 'strengthen' : slot.role === 'main' ? 'main_lift' : 'supporting_lift'],
         // Pulling protects the shoulders, so it is never the first thing cut for time.
         keep: PULL.includes(choice.exercise.pattern) || undefined,
       })
@@ -481,7 +504,7 @@ export function buildPlan(input: PlanInput): Plan {
     if (balancer && day && !day.items.some((i) => i.exerciseId === balancer.id)) {
       day.items.push({
         exerciseId: balancer.id, role: 'accessory', target: targetFor(balancer, 'accessory', input.profile),
-        reason: 'Balances your pushing with pulling, for shoulder health', alternatives: [], keep: true,
+        reason: 'Balances your pushing with pulling, for shoulder health', alternatives: [], keep: true, why: ['push_pull'],
       })
     }
   }
@@ -502,7 +525,7 @@ export function buildPlan(input: PlanInput): Plan {
       if (d.items.some((it) => it.exerciseId === id)) continue
       d.items.push({
         exerciseId: id, role: 'accessory', target: correctiveTarget(EXERCISE_BY_ID.get(id)!),
-        reason: need.reason, alternatives: need.ids.filter((x) => x !== id).slice(0, 3), keep: true, corrective: true,
+        reason: need.reason, alternatives: need.ids.filter((x) => x !== id).slice(0, 3), keep: true, corrective: true, why: ['corrective'],
       })
     }
   })
@@ -552,6 +575,7 @@ export function buildPlan(input: PlanInput): Plan {
     const w = weakSide[limb]
     if (!w) continue
     it.reason += `. Start with your ${w.side} ${limb} and add 1 set on it (InBody: ${w.diffPct}% less lean mass)`
+    it.why = [...(it.why ?? []), 'weak_side']
     weakUsed.add(limb)
   }
   for (const limb of ['arm', 'leg'] as const) {

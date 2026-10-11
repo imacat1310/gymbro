@@ -1,3 +1,4 @@
+import { Why } from './Why'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -68,13 +69,14 @@ export function EntryCard({ sessionId, entry, sets, experience }: Props) {
         </p>
       )}
       {suggestion && working.length === 0 && (
-        <p className={`suggestion ${suggestion.kind}`}>
+        <div className={`suggestion ${suggestion.kind}`}>
           <span className="sugg-icon" aria-hidden="true">{KIND_ICON[suggestion.kind]}</span>
           <span>
             {suggestion.weightKg !== null && inc > 0 && <strong>{fmtKg(suggestion.weightKg)} × {suggestion.reps} · </strong>}
             {suggestion.reason}
+            <Why codes={[suggestion.why]} />
           </span>
-        </p>
+        </div>
       )}
 
       {(sets.length > 0 || pendingWarmups.length > 0) && (

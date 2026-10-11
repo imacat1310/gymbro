@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { lazy, Suspense } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { db } from '../db/db'
 import { EXERCISE_BY_ID } from '../data/exercises'
@@ -9,6 +10,8 @@ import { InstallHint } from '../components/InstallHint'
 import { volumeKg } from '../lib/stats'
 
 const WEEK = 7 * 24 * 3600 * 1000
+// Coach signals scan your whole history: loaded after the page so the first paint stays fast.
+const CoachCard = lazy(() => import('../components/CoachCard').then((m) => ({ default: m.CoachCard })))
 
 export function TodayPage() {
   const settings = useSettings()
@@ -37,6 +40,7 @@ export function TodayPage() {
       </header>
 
       <InstallHint />
+      {!active && <Suspense fallback={null}><CoachCard /></Suspense>}
 
       {active ? (
         <Link to="/workout" className="card hero-card">

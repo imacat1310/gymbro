@@ -1,4 +1,5 @@
 // Progression engine (features/05-session-tracker.md). Pure functions, so they can be unit tested.
+import type { WhyCode } from './coach/why'
 import { isLowerBody, type Exercise } from '../data/exercises'
 import type { Target } from './targets'
 
@@ -17,6 +18,8 @@ export interface Suggestion {
   reps: number
   kind: SuggestionKind
   reason: string
+  /** The rule behind it, for the "Why?" panel (lib/coach/why.ts). */
+  why: WhyCode
 }
 
 /** Estimated 1RM: Epley on reps + reps-in-reserve (from RPE) so submaximal sets aren't underestimated. */
@@ -65,9 +68,9 @@ function missedMin(sets: LoggedSet[], repMin: number) {
 export function suggestNext(ex: Exercise, target: Target, history: LoggedSet[][], opts: { blockIncrease?: string } = {}): Suggestion {
   const recent = history.filter((s) => s.length > 0)
   if (recent.length === 0) {
-    if (ex.measure === 'time') return { weightKg: null, reps: target.repMin, kind: 'new', reason: `First time: hold for about ${target.repMin} s` }
-    if (loadIncrement(ex) === 0) return { weightKg: null, reps: target.repMax, kind: 'new', reason: `First time: do as many good reps as you can, up to ${target.repMax}` }
-    return { weightKg: null, reps: target.repMax, kind: 'new', reason: `First time: pick a weight you could lift about ${target.repMax + 2} times` }
+    if (ex.measure === 'time') return { weightKg: null, reps: target.repMin, kind: 'new', why: 'first_time', reason: `First time: hold for about ${target.repMin} s` }
+    if (loadIncrement(ex) === 0) return { weightKg: null, reps: target.repMax, kind: 'new', why: 'first_time', reason: `First time: do as many good reps as you can, up to ${target.repMax}` }
+    return { weightKg: null, reps: target.repMax, kind: 'new', why: 'first_time', reason: `First time: pick a weight you could lift about ${target.repMax + 2} times` }
   }
 
   const last = recent[0]
@@ -75,13 +78,13 @@ export function suggestNext(ex: Exercise, target: Target, history: LoggedSet[][]
   const minReps = Math.min(...sets.map((s) => s.reps))
 
   if (ex.measure === 'time') {
-    return { weightKg: top || null, reps: minReps + 5, kind: 'more_time', reason: `Last time ${minReps} s minimum → aim for ${minReps + 5} s` }
+    return { weightKg: top || null, reps: minReps + 5, kind: 'more_time', why: 'timed_progression', reason: `Last time ${minReps} s minimum → aim for ${minReps + 5} s` }
   }
 
   const inc = loadIncrement(ex)
   if (inc === 0) {
     const next = Math.max(minReps + 1, target.repMin)
-    return { weightKg: top, reps: next, kind: 'more_reps', reason: `Last time ${sets.map((s) => s.reps).join(', ')} reps → aim for ${next} per set` }
+    return { weightKg: top, reps: next, kind: 'more_reps', why: 'bodyweight_reps', reason: `Last time ${sets.map((s) => s.reps).join(', ')} reps → aim for ${next} per set` }
   }
 
   const repsList = sets.map((s) => s.reps).join(', ')
@@ -90,19 +93,19 @@ export function suggestNext(ex: Exercise, target: Target, history: LoggedSet[][]
 
   if (allTop && !hardSet) {
     if (opts.blockIncrease) {
-      return { weightKg: top, reps: target.repMax, kind: 'repeat', reason: `Ready to increase, but held back: ${opts.blockIncrease}` }
+      return { weightKg: top, reps: target.repMax, kind: 'repeat', why: 'form_hold', reason: `Ready to increase, but held back: ${opts.blockIncrease}` }
     }
     const next = roundToIncrement(top + inc, inc)
-    return { weightKg: next, reps: target.repMin, kind: 'increase', reason: `You hit ${repsList} @ ${fmt(top)}, the top of your ${target.repMin}–${target.repMax} range → +${fmt(inc)}` }
+    return { weightKg: next, reps: target.repMin, kind: 'increase', why: 'double_progression', reason: `You hit ${repsList} @ ${fmt(top)}, the top of your ${target.repMin}–${target.repMax} range → +${fmt(inc)}` }
   }
 
   if (allTop && hardSet) {
-    return { weightKg: top, reps: target.repMax, kind: 'repeat', reason: `Top reps but RPE ${hardSet.rpe} is above your target ${target.targetRpe}. Same weight until it feels easier` }
+    return { weightKg: top, reps: target.repMax, kind: 'repeat', why: 'rpe_hold', reason: `Top reps but RPE ${hardSet.rpe} is above your target ${target.targetRpe}. Same weight until it feels easier` }
   }
 
   if (!missedMin(sets, target.repMin)) {
     const next = Math.min(target.repMax, minReps + 1)
-    return { weightKg: top, reps: next, kind: 'repeat', reason: `${repsList} @ ${fmt(top)} → same weight, aim for ${next} reps on every set` }
+    return { weightKg: top, reps: next, kind: 'repeat', why: 'double_progression', reason: `${repsList} @ ${fmt(top)} → same weight, aim for ${next} reps on every set` }
   }
 
   // Missed the bottom of the range: deload if it happened last session too at the same or higher weight.
@@ -111,10 +114,10 @@ export function suggestNext(ex: Exercise, target: Target, history: LoggedSet[][]
     const p = topWeightSets(prev)
     if (p.top >= top && missedMin(p.sets, target.repMin)) {
       const next = Math.min(top - inc, roundToIncrement(top * 0.9, inc))
-      return { weightKg: Math.max(0, next), reps: target.repMax, kind: 'deload', reason: `Missed ${target.repMin} reps two sessions in a row → −10% to ${fmt(next)} and build back up` }
+      return { weightKg: Math.max(0, next), reps: target.repMax, kind: 'deload', why: 'deload_missed', reason: `Missed ${target.repMin} reps two sessions in a row → −10% to ${fmt(next)} and build back up` }
     }
   }
-  return { weightKg: top, reps: target.repMin, kind: 'repeat', reason: `Missed ${target.repMin} reps last time (${repsList}). Same weight, aim for ${target.repMin}` }
+  return { weightKg: top, reps: target.repMin, kind: 'repeat', why: 'double_progression', reason: `Missed ${target.repMin} reps last time (${repsList}). Same weight, aim for ${target.repMin}` }
 }
 
 export interface NextSet {

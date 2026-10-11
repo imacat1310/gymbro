@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router'
 import { db } from '../db/db'
+import { useSignals } from '../lib/coach/useSignals'
+import { coachView } from '../lib/coach/signals'
 import { ProfileForm } from '../components/ProfileForm'
 import { exportAll, resetAll, saveSettings } from '../db/repo'
 import { formatDate, useSettings } from '../lib/hooks'
@@ -49,6 +51,8 @@ export function ProfilePage() {
         </Link>
       </section>
 
+      <CoachView />
+
       {settings && (
         <section className="card stack">
           <h2>Training profile</h2>
@@ -81,5 +85,18 @@ export function ProfilePage() {
         <p className="muted small">v{__APP_VERSION__} · <a href="https://github.com/imacat1310/gymbro" target="_blank" rel="noreferrer">Source on GitHub</a></p>
       </section>
     </div>
+  )
+}
+
+/** "What your coach sees" (ADR-016): every signal the coach reasons over, in plain lines. */
+function CoachView() {
+  const signals = useSignals()
+  if (!signals) return null
+  return (
+    <section className="card stack">
+      <h2>What your coach sees</h2>
+      <ul className="bullets small">{coachView(signals).map((l) => <li key={l}>{l}</li>)}</ul>
+      <p className="muted small">This is everything the coach reasons over. It's worked out on this phone by fixed rules; nothing is sent anywhere.</p>
+    </section>
   )
 }

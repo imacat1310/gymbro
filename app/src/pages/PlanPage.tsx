@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { PlanSetup } from '../components/PlanSetup'
 import { EXERCISE_BY_ID } from '../data/exercises'
 import { PlanEditor } from '../components/PlanEditor'
+import { Why } from '../components/Why'
 import type { Muscle } from '../data/exercises'
 import { db, type Schedule, type Settings, type StoredPlan } from '../db/db'
 import {
@@ -354,6 +355,7 @@ function PlanItemRow({ plan, dayIndex, itemIndex, warning }: { plan: StoredPlan;
           <Link to={`/exercise/${ex.id}`} className="plan-item-name">{warning?.level === 'danger' && <span className="badge danger">!</span>} {ex.name}</Link>
           <div className="muted small">{item.target.sets} × {item.target.repMin}–{item.target.repMax}{unit} · {item.reason}</div>
           {warning && <div className={`small ${warning.level === 'danger' ? 'error' : 'muted'}`}>{warning.text}</div>}
+          <Why codes={item.why} />
         </div>
         {item.alternatives.length > 0 && (
           <button className="ghost small" aria-expanded={open} onClick={() => setOpen(!open)}>Swap</button>

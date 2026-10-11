@@ -192,3 +192,22 @@ input::placeholder { color: #4b6478; }
   background: rgba(34, 211, 238, 0.06); color: var(--accent-hi); border: 1px solid var(--hud-dim); border-radius: 2px;
 }
 .pick-group { margin: 12px 0 4px; font-family: var(--font-title); font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+
+/* Why? panels and the coach card (ADR-016) */
+.why { margin-top: 4px; }
+.why-toggle { clip-path: none; min-height: 26px; padding: 0 8px; font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0; text-transform: none; background: transparent; color: var(--accent-hi); border: 1px dashed var(--hud-dim); border-radius: 2px; }
+.why-panel { margin-top: 6px; padding: 8px 10px; background: rgba(2, 6, 12, 0.6); border: 1px solid var(--border); border-left: 2px solid var(--accent); border-radius: 2px; font-size: 0.85rem; color: var(--text); }
+.why-panel p { margin: 4px 0; line-height: 1.4; }
+.why-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.why-ev { font-family: var(--font-data); font-size: 0.72rem; padding: 1px 6px; border-radius: 2px; border: 1px solid currentColor; }
+.why-ev.strong { color: var(--sev-ok); }
+.why-ev.moderate { color: var(--sev-mild); }
+.why-ev.convention { color: var(--muted); }
+.why-sources { margin: 4px 0 0; padding-left: 16px; color: var(--muted); font-size: 0.78rem; }
+.why-sources a { color: var(--accent-hi); }
+.coach-card { border-left: 3px solid var(--accent); }
+.coach-card.pause, .coach-card.deload { border-left-color: var(--sev-moderate); }
+.coach-card.record, .coach-card.on_track { border-left-color: var(--sev-ok); }
+.coach-tag { font-family: var(--font-title); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.coach-title { display: block; margin: 4px 0 2px; font-family: var(--font-title); font-size: 0.95rem; letter-spacing: 0.06em; color: var(--accent-hi); text-decoration: none; }
+.coach-card p { margin: 4px 0; }

@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Session focus (v0.16.0): Plan → a day's "Focus" button → a sport or quality
-- Next: Design pass → Today (level, activity goal, badges); AI coach decision pending (ideas #15)
+- Coach reasoning (v0.17.0): "Why?" on suggestions and plan items, Coach card on Today, "What your coach sees" on Profile
+- Next: Design pass → Today (level, activity goal, badges); opt-in AI coach waits on the backend decision (ideas #15)
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -49,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Coach reasoning adapted from gymcoach (MIT): reason codes + sources, stall/deload signals, one Today insight, coach view; no AI ([ADR-016](decisions/ADR-016-coach-reasoning.md)) | User chose A and gymcoach as the model | LLM chat now (needs backend), on-device LLM |
 | 2026-10-12 | Session focus: sport-specific gym days, 6 sports + 4 focuses, curated slots ([ADR-015](decisions/ADR-015-session-focus-sport-days.md)) | User's choice | Playing days (later), both |
 | 2026-10-12 | Plan builder v2: body data → pause, correctives, strengthen, weaker side; rebuild prompts ([ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)) | User asked how the body report relates to the plan; it didn't | Live changes to existing plans |
 | 2026-10-11 | Sci-fi HUD theme replaces Bonfire ([ADR-013](decisions/ADR-013-scifi-hud-theme.md)) | User asked for futuristic; chose HUD from three mockups | Cyberpunk neon, sleek glass |
@@ -66,6 +67,17 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (coach reasoning, v0.17.0)
+- **User:** option A (better explanations, no AI) using gymcoach (MIT) as the reasoning model. Read gymcoach's progression, deload, stall, home-insight and coach-context modules (read only, nothing run) and rewrote the design for GymBro (ADR-016; credited in THIRD_PARTY_NOTICES.md).
+- **Built:**
+  - 37 reason codes with rule, evidence level and sources; links only where checked (six references verified by search)
+  - "Why?" panels on workout suggestions, plan exercises and the coach card
+  - stall/deload/record/consistency signals
+  - Coach card on Today with a priority selector
+  - "What your coach sees" on Profile
+- **Fixed during testing:** the main bundle crossed 500 KB (registry and coach card now load on demand: 485 KB); a "Why?" panel inside a paragraph was invalid HTML.
+- **Verified:** 213 unit tests ✅ (13 new: stall test, deload, records, week start, insight priority, coach view); lint ✅; build ✅; E2E 6/6 ✅ (deload insight from 2 stalled lifts, Why? with rule/evidence/source, workout and plan Why?, coach view, no console errors).
 
 ### 2026-10-12 (session focus / sport days, v0.16.0)
 - **User request:** change a plan session for another sport. Options were presented; the user chose sport-specific gym days for court sports, combat/swimming and general focuses (ADR-015).
