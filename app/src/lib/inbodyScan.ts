@@ -33,6 +33,8 @@ export type Status = 'read' | 'check' | 'calculated'
 export interface ScanResult {
   values: InBodyValues
   status: Partial<Record<InBodyField, Status>>
+  /** For values marked "check": other readings the user can pick with one tap. */
+  alternatives: Partial<Record<InBodyField, number[]>>
   date?: number
   /** Height printed on the sheet, used for the BMI check. */
   sheetHeightCm?: number
@@ -68,7 +70,7 @@ export function mergeFragments(words: Word[]): Word[] {
 export function numberOf(text: string): { v: number; decimal: boolean } | null {
   // "(37.4", "45.8)", "8.0~16.0" are parts of printed reference ranges.
   if (/~/.test(text) || /^\(/.test(text) || /\d\)$/.test(text)) return null
-  const m = text.match(/^[|[(:"'“—-]?(\d{1,4}(?:[.,]\d{1,3})?)(?:kg|ke|kc|xg|g|%|cm|kcal|[|\]):;,'"!.])*$/i)
+  const m = text.match(/^[|[(:"'“—-]?(\d{1,4}(?:[.,]\d{1,3})?)(?:kg|ke|kc|xg|g|%|cm|kcal|[a-z]{1,3}|[|\]):;,'"!.])*$/i)
   return m ? { v: toNum(m[1]), decimal: /[.,]\d/.test(m[1]) } : null
 }
 
@@ -211,33 +213,72 @@ export function candidatesFromWords(pass: Pass): Candidates {
   }
 
   // Segmental lean figure (InBody 270 style): five kg values placed on a body outline, "Left" on the image left.
-  const lean = leanHead
-  if (lean && !labelled) {
-    const fat = find(words, /segmental\s*fat/).find((b) => Math.abs(b.y0 - lean.y0) < 3 * h(lean) && b.x0 > lean.x1)
-    const x0 = lean.x0 - 0.03 * pass.width, x1 = fat ? fat.x0 - 0.01 * pass.width : Math.min(colX, lean.x0 + 0.4 * pass.width)
-    const yTop = lean.y1, yBottom = Math.min(historyY, lean.y1 + 0.3 * pass.height)
-    const inFig = words.filter((w) => w.x0 >= x0 && w.x1 <= x1 && w.y0 > yTop && w.y1 < yBottom)
-      .map((w) => ({ w, n: numberOf(w.text) })).filter((c) => c.n?.decimal) as { w: Word; n: { v: number; decimal: boolean } }[]
-    if (inFig.length) {
-      // Arms and legs sit symmetrically, so the figure's centre line is midway between the outermost values.
-      const xs = inFig.map(({ w }) => cx(w))
-      const midX = (Math.min(...xs) + Math.max(...xs)) / 2
-      // Trunk: on the centre line. Arms above it, legs below it; left/right by side of the centre line.
-      const trunk = inFig.filter(({ w, n }) => Math.abs(cx(w) - midX) < 0.035 * pass.width && n.v >= FIELDS.leanTrunk.min && n.v <= FIELDS.leanTrunk.max)
-        .sort((p, q) => Math.abs(cx(p.w) - midX) - Math.abs(cx(q.w) - midX))[0]
-      if (trunk) add('leanTrunk', trunk.n.v)
-      const ys = inFig.map(({ w }) => cy(w))
-      const refY = trunk ? cy(trunk.w) : (Math.min(...ys) + Math.max(...ys)) / 2
-      const side = (field: InBodyField, left: boolean, above: boolean) => {
-        const c = inFig.filter(({ w, n }) => (cx(w) < midX) === left && Math.abs(cx(w) - midX) >= 0.035 * pass.width
-          && (above ? cy(w) < refY : cy(w) > refY) && n.v >= FIELDS[field].min && n.v <= FIELDS[field].max)
-          .sort((p, q) => p.w.y0 - q.w.y0)[0] // the kg value sits above its % value
-        if (c) add(field, c.n.v)
-      }
-      side('leanLeftArm', true, true); side('leanRightArm', false, true)
-      side('leanLeftLeg', true, false); side('leanRightLeg', false, false)
-    }
+  const fig = labelled ? undefined : figureRegion(words, pass, colX, historyY)
+  if (fig) {
+    const inFig = words.filter((w) => w.x0 >= fig.x0 && w.x1 <= fig.x1 && w.y0 > fig.y0 && w.y1 < fig.y1)
+    assignFigure(inFig, fig.x1 - fig.x0, add)
   }
+  return out
+}
+
+export interface Box { x0: number; y0: number; x1: number; y1: number }
+
+/** Where the segmental lean body figure is: below its header, left of the fat figure, above the history. */
+function figureRegion(words: Word[], pass: Pass, colX: number, historyY: number): Box | undefined {
+  const lean = find(words, /segmental\s*lean/)[0]
+  if (!lean) return undefined
+  const fat = find(words, /segmental\s*fat/).find((b) => Math.abs(b.y0 - lean.y0) < 3 * h(lean) && b.x0 > lean.x1)
+  return {
+    x0: Math.max(0, lean.x0 - 0.03 * pass.width),
+    x1: fat ? fat.x0 - 0.01 * pass.width : Math.min(colX, lean.x0 + 0.4 * pass.width),
+    y0: lean.y1,
+    y1: Math.min(historyY, lean.y1 + 0.3 * pass.height),
+  }
+}
+
+/** The figure's region in image pixels, for a close-up second read (see `candidatesFromFigure`). */
+export function figureBox(pass: Pass): Box | undefined {
+  const words = pass.words.filter((w) => w.text.trim())
+  const rightHeads = find(words, RIGHT_COLUMN).filter((b) => b.x0 > pass.width * 0.5)
+  const colX = rightHeads.length ? Math.min(...rightHeads.map((b) => b.x0)) - 0.01 * pass.width : Infinity
+  const historyY = find(words, /composition\s*history/)[0]?.y0 ?? Infinity
+  if (find(words, /right\s*arm|left\s*leg/).length) return undefined // labelled table, not a figure
+  return figureRegion(words, pass, colX, historyY)
+}
+
+/**
+ * Assign the decimal numbers on a body figure: trunk on the centre line, arms above it, legs below it, left/right
+ * by side ("Left" is printed on the image's left). The kg value sits above its % value.
+ */
+function assignFigure(ws: Word[], figWidth: number, add: (f: Field, v: number) => void) {
+  const nums = ws.map((w) => ({ w, n: numberOf(w.text) })).filter((c) => c.n?.decimal) as { w: Word; n: { v: number; decimal: boolean } }[]
+  if (!nums.length) return
+  // Arms and legs sit symmetrically, so the centre line is midway between the outermost values.
+  const xs = nums.map(({ w }) => cx(w))
+  const midX = (Math.min(...xs) + Math.max(...xs)) / 2
+  const near = 0.12 * figWidth
+  const trunk = nums.filter(({ w, n }) => Math.abs(cx(w) - midX) < near && n.v >= FIELDS.leanTrunk.min && n.v <= FIELDS.leanTrunk.max)
+    .sort((p, q) => Math.abs(cx(p.w) - midX) - Math.abs(cx(q.w) - midX))[0]
+  if (trunk) add('leanTrunk', trunk.n.v)
+  const ys = nums.map(({ w }) => cy(w))
+  const refY = trunk ? cy(trunk.w) : (Math.min(...ys) + Math.max(...ys)) / 2
+  const side = (field: InBodyField, left: boolean, above: boolean) => {
+    const c = nums.filter(({ w, n }) => (cx(w) < midX) === left && Math.abs(cx(w) - midX) >= near
+      && (above ? cy(w) < refY : cy(w) > refY) && n.v >= FIELDS[field].min && n.v <= FIELDS[field].max)
+      .sort((p, q) => p.w.y0 - q.w.y0)[0]
+    if (c) add(field, c.n.v)
+  }
+  side('leanLeftArm', true, true); side('leanRightArm', false, true)
+  side('leanLeftLeg', true, false); side('leanRightLeg', false, false)
+}
+
+/** Candidates from a close-up read of the figure alone (the whole pass is the figure). */
+export function candidatesFromFigure(pass: Pass): Candidates {
+  const out: Candidates = {}
+  const words = mergeFragments(pass.words.filter((w) => w.text.trim()))
+  if (!words.length) return out
+  const x0 = Math.min(...words.map((w) => w.x0)), x1 = Math.max(...words.map((w) => w.x1))
+  assignFigure(words, x1 - x0, (f, v) => { (out[f] ??= []).push(v) })
   return out
 }
 
@@ -251,19 +292,26 @@ export function sheetHeight(text: string): number | undefined {
 
 const round = (v: number, dp: number) => Math.round(v * 10 ** dp) / 10 ** dp
 
-/** Most common value among candidates, with how many sources agree. */
-function vote(vals: number[] = []): { v: number; n: number } | undefined {
+interface Vote { v: number; n: number; others: { v: number; n: number }[] }
+
+/** Most common value among candidates, how many sources agree, and the rival readings. */
+function vote(vals: number[] = []): Vote | undefined {
   const counts = new Map<number, number>()
   for (const v of vals) counts.set(v, (counts.get(v) ?? 0) + 1)
-  let best: { v: number; n: number } | undefined
-  for (const [v, n] of counts) if (!best || n > best.n) best = { v, n }
-  return best
+  const decimals = (v: number) => (String(v).split('.')[1] ?? '').length
+  // Ties go to the more precise reading: OCR drops trailing digits ("9.8" for 9.87) more than it invents them.
+  const ranked = [...counts].map(([v, n]) => ({ v, n })).sort((a, b) => b.n - a.n || decimals(b.v) - decimals(a.v))
+  return ranked.length ? { ...ranked[0], others: ranked.slice(1) } : undefined
 }
 
+/** Confident = at least two sources agree and no rival comes close (3:1). */
+const confident = (b: Vote) => b.n >= 2 && b.others.every((o) => b.n >= 3 * o.n)
+
 /** Combine OCR passes into one checked reading. `profileHeightCm` is a fallback for the BMI check. */
-export function resolveScan(passes: Pass[], profileHeightCm?: number): ScanResult {
+export function resolveScan(passes: Pass[], profileHeightCm?: number, figurePasses: Pass[] = []): ScanResult {
   const all: Candidates = {}
-  const push = (c: Candidates) => { for (const [f, vs] of Object.entries(c) as [Field, number[]][]) (all[f] ??= []).push(...vs) }
+  // Round to the printed precision first: OCR often reads the "k" of "kg" as a digit ("3.211").
+  const push = (c: Candidates) => { for (const [f, vs] of Object.entries(c) as [Field, number[]][]) (all[f] ??= []).push(...vs.map((v) => round(v, dpOf(f)))) }
   let convertedFromLb = false, date: number | undefined, heightCm: number | undefined
   for (const p of passes) {
     push(candidatesFromWords(p))
@@ -274,9 +322,15 @@ export function resolveScan(passes: Pass[], profileHeightCm?: number): ScanResul
     // Text-line values count as candidates, but values it had to guess a decimal point for don't.
     push(Object.fromEntries(t.found.filter((f) => !t.uncertain.includes(f)).map((f) => [f, [t.values[f]!]])))
   }
+  for (const p of figurePasses) push(candidatesFromFigure(p))
 
   const values: InBodyValues = {}
   const status: Partial<Record<InBodyField, Status>> = {}
+  const alternatives: Partial<Record<InBodyField, number[]>> = {}
+  const fromVote = (f: InBodyField, b: Vote) => {
+    set(f, b.v, confident(b) ? 'read' : 'check')
+    if (!confident(b) && b.others.length) alternatives[f] = b.others.slice(0, 2).map((o) => o.v)
+  }
   const set = (f: InBodyField, v: number, s: Status) => { values[f] = round(v, FIELDS[f].dp); status[f] = s }
 
   // 1. Body composition table: water + protein + minerals + fat mass = weight.
@@ -290,11 +344,18 @@ export function resolveScan(passes: Pass[], profileHeightCm?: number): ScanResul
     set('weightKg', composition.w, 'read'); set('bodyFatKg', composition.fat, 'read'); set('tbwL', composition.tbw, 'read')
   }
 
+  // Segmental proportions: trunk lean mass is 2–3.5× a leg's. A "trunk" well below that is a misplaced leg value.
+  const legs = [vote(all.leanLeftLeg)?.v, vote(all.leanRightLeg)?.v].filter((v): v is number => v !== undefined)
+  if (legs.length && all.leanTrunk) {
+    const leg = Math.max(...legs)
+    all.leanTrunk = all.leanTrunk.filter((v) => v >= 1.8 * leg && v <= 4.5 * leg)
+  }
+
   // 2. Everything else: agreement between sources → read; a single source → check.
   for (const f of FIELD_ORDER) {
     if (values[f] !== undefined || f === 'bmi' || f === 'pbf' || f === 'smmKg') continue
     const b = vote(all[f])
-    if (b) set(f, b.v, b.n >= 2 ? 'read' : 'check')
+    if (b) fromVote(f, b)
   }
 
   const weight = values.weightKg, fat = values.bodyFatKg
@@ -317,7 +378,7 @@ export function resolveScan(passes: Pass[], profileHeightCm?: number): ScanResul
   const ffm = weight && fat ? weight - fat : undefined
   const smmOk = (all.smmKg ?? []).filter((v) => !ffm || (v / ffm >= 0.45 && v / ffm <= 0.65))
   const smm = vote(smmOk)
-  if (smm) set('smmKg', smm.v, smm.n >= 2 ? 'read' : 'check')
+  if (smm) fromVote('smmKg', smm)
 
-  return { values, status, date, sheetHeightCm: heightCm, convertedFromLb }
+  return { values, status, alternatives, date, sheetHeightCm: heightCm, convertedFromLb }
 }

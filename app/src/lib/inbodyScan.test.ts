@@ -55,6 +55,7 @@ describe('building blocks', () => {
     const m = mergeFragments([word('70.', 400, 472), word('0', 427, 472), word('kg', 460, 472)])
     expect(m.map((w) => w.text)).toEqual(['70.0', 'kg'])
   })
+  it('numberOf tolerates a misread unit ("24.1xs")', () => expect(numberOf('24.1xs')).toEqual({ v: 24.1, decimal: true }))
   it('sheetHeight reads the header', () => expect(sheetHeight('Height 168cm Age 41')).toBe(168))
 })
 
@@ -140,5 +141,46 @@ describe('tilted photos and labelled tables', () => {
     // No readable "Segmental Lean" header (white on a dark bar): the first occurrences are used.
     const c = candidatesFromWords(pass([...lean, ...fat]))
     expect(c).toMatchObject({ leanRightArm: [3.11], leanLeftArm: [3.05], leanTrunk: [24.8], leanRightLeg: [8.62], leanLeftLeg: [8.55] })
+  })
+})
+
+describe('figure close-up and proportions', () => {
+  const fig = (ws: Word[]): Pass => ({ text: '', words: ws, width: 600, height: 500 })
+  it('a close-up read of the figure alone assigns all five values', () => {
+    const ws = [word('3.20kg', 40, 40), word('3.10kg', 420, 40), word('24.6kg', 230, 160), word('9.40kg', 40, 300), word('9.50kg', 420, 300),
+      word('107.5%', 40, 70), word('103.2%', 230, 190)]
+    const r = resolveScan([pass(page270({ seg: [] }))], undefined, [fig(ws), fig(ws)])
+    expect(r.values).toMatchObject({ leanLeftArm: 3.2, leanRightArm: 3.1, leanTrunk: 24.6, leanLeftLeg: 9.4, leanRightLeg: 9.5 })
+    expect(r.status.leanTrunk).toBe('read')
+  })
+  it('a "trunk" that is really a leg value is rejected by body proportions', () => {
+    // One close-up lost the left-side values, so its centre line moved and a leg value landed on it.
+    const lopsided = fig([word('3.10kg', 420, 40), word('9.50kg', 300, 300), word('9.40kg', 420, 330)])
+    const r = resolveScan([pass(page270({ seg: [] }))], undefined, [lopsided])
+    expect(r.values.leanTrunk).toBeUndefined()
+  })
+  it('ties go to the more precise reading ("9.87" over "9.8")', () => {
+    const a = fig([word('3.2kg', 40, 40), word('24.6kg', 230, 160), word('9.87kg', 40, 300)])
+    const b = fig([word('3.2kg', 40, 40), word('24.6kg', 230, 160), word('9.8kg', 40, 300)])
+    expect(resolveScan([pass(page270({ seg: [] }))], undefined, [a, b]).values.leanLeftLeg).toBe(9.87)
+  })
+})
+
+describe('agreement rules', () => {
+  const fig = (ws: Word[]): Pass => ({ text: '', words: ws, width: 600, height: 500 })
+  const read = (trunk: string) => fig([word('3.20kg', 40, 40), word('3.10kg', 420, 40), word(trunk, 230, 160), word('9.40kg', 40, 300), word('9.50kg', 420, 300)])
+  it('a 2-to-1 split is "check", offering the other reading', () => {
+    const r = resolveScan([pass(page270({ seg: [] }))], undefined, [read('24.9kg'), read('24.9kg'), read('24.6kg')])
+    expect(r.status.leanTrunk).toBe('check')
+    expect(r.alternatives.leanTrunk).toEqual([24.6])
+  })
+  it('3-to-1 is confident', () => {
+    const r = resolveScan([pass(page270({ seg: [] }))], undefined, [read('24.6kg'), read('24.6kg'), read('24.6kg'), read('24.9kg')])
+    expect(r.status.leanTrunk).toBe('read')
+  })
+  it('an extra digit from a misread "kg" is rounded away ("3.201" counts as 3.20)', () => {
+    const r = resolveScan([pass(page270({ seg: [] }))], undefined, [read('24.6kg'), fig([word('3.201', 40, 40), word('24.6kg', 230, 160), word('9.40kg', 40, 300), word('9.50kg', 420, 300), word('3.10kg', 420, 40)])])
+    expect(r.values.leanLeftArm).toBe(3.2)
+    expect(r.status.leanLeftArm).toBe('read')
   })
 })

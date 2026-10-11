@@ -5,8 +5,8 @@ import { Link } from 'react-router'
 import { db, type BodyComp } from '../db/db'
 import { deleteBodyComp, saveBodyComp } from '../db/repo'
 import { FIELD_ORDER, FIELDS, type InBodyField, type InBodyValues } from '../lib/inbody'
-import { resolveScan, type Status } from '../lib/inbodyScan'
-import { readSheet, type OcrStage } from '../lib/ocr'
+import { figureBox, resolveScan, type Status } from '../lib/inbodyScan'
+import { readRegion, readSheet, type OcrStage } from '../lib/ocr'
 import { formatDate, useSettings } from '../lib/hooks'
 
 const SUMMARY: InBodyField[] = ['weightKg', 'smmKg', 'pbf']
@@ -26,6 +26,8 @@ interface Draft {
   fields: Partial<Record<InBodyField, string>>
   /** How each scanned value was obtained; editing a value clears its tag. */
   status: Partial<Record<InBodyField, Status>>
+  /** Other readings for values marked "check". */
+  alternatives?: Partial<Record<InBodyField, number[]>>
   convertedFromLb?: boolean
   photoUrl?: string
 }
@@ -47,7 +49,10 @@ export function BodyPage() {
     setProgress({ stage: 'loading', p: 0 })
     try {
       const passes = await readSheet(file, (stage, p) => setProgress({ stage, p }))
-      const r = resolveScan(passes, settings?.heightCm)
+      // InBody 270-style sheets print segmental values on a grey body figure: read it again close up.
+      const box = figureBox(passes[0])
+      const figure = box && passes[0].image ? await readRegion(passes[0].image, box, (stage, p) => setProgress({ stage, p })) : []
+      const r = resolveScan(passes, settings?.heightCm, figure)
       const found = FIELD_ORDER.filter((f) => r.values[f] !== undefined)
       if (!found.length) {
         setError("Couldn't find InBody results in that photo. Try again closer, flat and in good light, or enter the values by hand.")
@@ -56,8 +61,9 @@ export function BodyPage() {
       setDraft({
         source: 'scan',
         measuredAt: r.date ?? Date.now(),
-        fields: Object.fromEntries(found.map((f) => [f, String(r.values[f])])),
+        fields: Object.fromEntries(found.map((f) => [f, r.values[f]!.toFixed(FIELDS[f].dp)])),
         status: r.status,
+        alternatives: r.alternatives,
         convertedFromLb: r.convertedFromLb,
         photoUrl: URL.createObjectURL(file),
       })
@@ -95,7 +101,7 @@ export function BodyPage() {
 
       {progress && (
         <section className="card stack" aria-live="polite">
-          <h2>{progress.stage === 'loading' ? 'Loading the text reader…' : 'Reading the sheet…'}</h2>
+          <h2>{progress.stage === 'loading' ? 'Loading the text reader…' : progress.stage === 'figure' ? 'Reading the body figure…' : 'Reading the sheet…'}</h2>
           <div className="progress"><div style={{ width: `${Math.round(progress.p * 100)}%` }} /></div>
           <p className="muted small">{progress.stage === 'loading' ? 'The first scan downloads about 7 MB; later scans work offline.' : `${Math.round(progress.p * 100)}%`}</p>
         </section>
@@ -231,6 +237,9 @@ function Review({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
                     {st === 'calculated' && <span className="tag calc" title="Worked out from your other values">calculated</span>}</span>
                   <input inputMode="decimal" value={draft.fields[f] ?? ''} placeholder={draft.source === 'scan' && !st ? 'not found' : ''}
                     aria-invalid={invalid.includes(f)} onChange={(e) => set(f, e.target.value)} />
+                  {st === 'check' && draft.alternatives?.[f]?.map((alt) => (
+                    <button key={alt} type="button" className="alt-pick" onClick={() => set(f, alt.toFixed(FIELDS[f].dp))}>or {alt.toFixed(FIELDS[f].dp)}?</button>
+                  ))}
                 </label>
               )
             })}

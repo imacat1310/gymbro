@@ -58,6 +58,11 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-11 (InBody 270 body figure, v0.12.0)
+- The user confirmed the InBody 270 format. Added a close-up read of the grey body figure: crop, enlarge 2×, black and white at 3 cut-offs × 2 modes, then vote (rounded to printed precision; "from photo" needs 2+ agreeing reads and a 3:1 margin; otherwise "check" with the rival as an "or …?" button). Trunk/leg proportion check.
+- **User's sheet: 13/14 exact**; trunk flagged "check" with the true value one tap away. 175 unit tests ✅; lint ✅; build ✅.
+- Scan time about 15 s on a Mac; to be measured on the phone.
+
 ### 2026-10-11 (InBody reader on a real sheet, v0.11.0)
 - **Test with the user's real InBody 270 photo** (kept out of the repo: it holds an ID, the gym's details and body data): the old line-based reader got **3/14 right and 2 wrong** (SMM from the impedance table, BMI from a chart tick).
 - **Rebuilt the reader** (ADR-008 rev. 1): two OCR passes with one worker; label chaining and same-column, same-row value picking from word boxes; deskew from text-line baselines; chart-tick and range rejection; body-figure and labelled-table segmental reading; arithmetic checks (water + protein + minerals + fat = weight; PBF; BMI from the printed height; SMM vs fat-free mass); statuses from photo / check / calculated.

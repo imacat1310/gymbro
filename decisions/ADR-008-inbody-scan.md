@@ -44,3 +44,11 @@ A real phone photo of an InBody 270 sheet (from the user; kept out of the public
 **Result:** real InBody 270 photo **12/14 correct, 0 wrong** (right arm and trunk illegible at the photo's 1106 px width); tilted 570-style synthetic sheet **12/15, 0 wrong**. About 10 s for two passes on a Mac; slower on a phone.
 
 **Privacy:** the user's sheet and its OCR output stay in the session's temporary folder. Unit tests use a synthetic layout with made-up values.
+
+## Revision 2 (2026-10-11): body-figure close-up for InBody 270 sheets
+The user confirmed their sheets use the InBody 270 format. Its segmental values sit on a **grey dotted body figure** that whole-page OCR can't read (right arm and trunk were missing).
+- **Close-up read:** the figure's region (found from the page's headers) is cropped, enlarged 2× and turned **black and white at three cut-offs** (120/135/150), then read in two modes: 6 small reads on one worker. Plain enlargement made it worse, because it amplified the dots.
+- **Voting:** candidates are rounded to the printed precision first (OCR reads "kg" as an extra digit, e.g. "3.211"). A value is *from photo* only when at least 2 reads agree **and** no rival has more than a third of its votes; otherwise *check*, with the rival offered as a one-tap "or …?" button.
+- **Body proportions:** a trunk value below 1.8× (or above 4.5×) a leg value is rejected; this catches leg values that land on the centre line in a lopsided read.
+
+**Result on the user's sheet:** **13/14 exact**; the trunk is shown as *check* with the true value offered one tap away ("or …?"). All 4 limbs and every main value were confirmed. About 15 s on a Mac (2 page reads + 6 close-ups); expect roughly 2–3× longer on a phone.
