@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { db, type BodyComp } from '../db/db'
 import { deleteBodyComp, saveBodyComp } from '../db/repo'
-import { formatDate } from '../lib/hooks'
-import { FIELD_ORDER, FIELDS, parseInBody, type InBodyField, type InBodyValues } from '../lib/inbody'
-import { readText, type OcrStage } from '../lib/ocr'
+import { FIELD_ORDER, FIELDS, type InBodyField, type InBodyValues } from '../lib/inbody'
+import { resolveScan, type Status } from '../lib/inbodyScan'
+import { readSheet, type OcrStage } from '../lib/ocr'
+import { formatDate, useSettings } from '../lib/hooks'
 
 const SUMMARY: InBodyField[] = ['weightKg', 'smmKg', 'pbf']
 const GROUPS: { id: 'main' | 'extra' | 'segmental'; title: string }[] = [
@@ -23,14 +24,14 @@ interface Draft {
   source: 'scan' | 'manual'
   measuredAt: number
   fields: Partial<Record<InBodyField, string>>
-  scanned: InBodyField[]
-  /** Read, but the decimal point was guessed: shown with a "check" tag. */
-  uncertain: InBodyField[]
+  /** How each scanned value was obtained; editing a value clears its tag. */
+  status: Partial<Record<InBodyField, Status>>
   convertedFromLb?: boolean
   photoUrl?: string
 }
 
 export function BodyPage() {
+  const settings = useSettings()
   const entries = useLiveQuery(() => db.bodyComps.orderBy('measuredAt').reverse().toArray(), [])
   const [draft, setDraft] = useState<Draft | null>(null)
   const [progress, setProgress] = useState<{ stage: OcrStage; p: number } | null>(null)
@@ -45,18 +46,18 @@ export function BodyPage() {
     setDraft(null)
     setProgress({ stage: 'loading', p: 0 })
     try {
-      const text = await readText(file, (stage, p) => setProgress({ stage, p }))
-      const r = parseInBody(text)
-      if (!r.found.length) {
+      const passes = await readSheet(file, (stage, p) => setProgress({ stage, p }))
+      const r = resolveScan(passes, settings?.heightCm)
+      const found = FIELD_ORDER.filter((f) => r.values[f] !== undefined)
+      if (!found.length) {
         setError("Couldn't find InBody results in that photo. Try again closer, flat and in good light, or enter the values by hand.")
         return
       }
       setDraft({
         source: 'scan',
         measuredAt: r.date ?? Date.now(),
-        fields: Object.fromEntries(r.found.map((f) => [f, String(r.values[f])])),
-        scanned: r.found,
-        uncertain: r.uncertain,
+        fields: Object.fromEntries(found.map((f) => [f, String(r.values[f])])),
+        status: r.status,
         convertedFromLb: r.convertedFromLb,
         photoUrl: URL.createObjectURL(file),
       })
@@ -83,7 +84,7 @@ export function BodyPage() {
             Scan InBody sheet
             <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void scan(f) }} />
           </label>
-          <button className="secondary" onClick={() => setDraft({ source: 'manual', measuredAt: Date.now(), fields: {}, scanned: [], uncertain: [] })}>Enter manually</button>
+          <button className="secondary" onClick={() => setDraft({ source: 'manual', measuredAt: Date.now(), fields: {}, status: {} })}>Enter manually</button>
           <p className="muted small">
             Lay the printed sheet flat in good light and fill the photo with it. The text is read on this phone;
             the photo is not saved or sent anywhere. Check every value before saving.
@@ -164,8 +165,12 @@ function Review({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
   const [busy, setBusy] = useState(false)
   const [today] = useState(() => toDateInput(Date.now()))
   // Editing a value counts as checking it.
-  const set = (f: InBodyField, v: string) =>
-    onChange({ ...draft, fields: { ...draft.fields, [f]: v }, uncertain: draft.uncertain.filter((x) => x !== f) })
+  const set = (f: InBodyField, v: string) => {
+    const status = { ...draft.status }
+    delete status[f]
+    onChange({ ...draft, fields: { ...draft.fields, [f]: v }, status })
+  }
+  const statusCount = (s: Status) => Object.values(draft.status).filter((x) => x === s).length
 
   const parsed: InBodyValues = {}
   const invalid: InBodyField[] = []
@@ -185,7 +190,7 @@ function Review({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
       values: parsed,
       source: draft.source,
       // Only values still as read from the photo count as scanned.
-      ...(draft.source === 'scan' ? { scanned: draft.scanned.filter((f) => parsed[f] !== undefined) } : {}),
+      ...(draft.source === 'scan' ? { scanned: FIELD_ORDER.filter((f) => draft.status[f] === 'read' && parsed[f] !== undefined) } : {}),
     })
     setBusy(false)
     onDone()
@@ -196,9 +201,10 @@ function Review({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
       <h2>{draft.source === 'scan' ? 'Check the values' : 'Enter your results'}</h2>
       {draft.source === 'scan' && (
         <p className="small">
-          Read {draft.scanned.length} of {FIELD_ORDER.length} values from the photo. Compare each one with your sheet,
+          Read {statusCount('read') + statusCount('check')} of {FIELD_ORDER.length} values from the photo
+          {statusCount('calculated') > 0 && ` and calculated ${statusCount('calculated')}`}. Compare each one with your sheet,
           fix anything wrong and fill in what's missing (or leave it empty).
-          {draft.uncertain.length > 0 && ' Values marked "check" were hard to read: look at those first.'}
+          {statusCount('check') > 0 && ' Values marked "check" were hard to read: look at those first.'}
           {draft.convertedFromLb && ' The sheet is in pounds; masses were converted to kg.'}
         </p>
       )}
@@ -217,12 +223,13 @@ function Review({ draft, onChange, onDone }: { draft: Draft; onChange: (d: Draft
           <legend>{g.title}</legend>
           <div className="inbody-grid">
             {FIELD_ORDER.filter((f) => FIELDS[f].group === g.id).map((f) => {
-              const fromPhoto = draft.scanned.includes(f)
-              const check = draft.uncertain.includes(f)
+              const st = draft.status[f]
               return (
                 <label key={f} className={`field ${invalid.includes(f) ? 'invalid' : ''}`}>
-                  <span>{FIELDS[f].label}{FIELDS[f].unit ? ` (${FIELDS[f].unit.replace('/', '')})` : ''}{fromPhoto && (check ? <span className="tag check">check</span> : <span className="tag">from photo</span>)}</span>
-                  <input inputMode="decimal" value={draft.fields[f] ?? ''} placeholder={draft.source === 'scan' && !fromPhoto ? 'not found' : ''}
+                  <span>{FIELDS[f].label}{FIELDS[f].unit ? ` (${FIELDS[f].unit.replace('/', '')})` : ''}{st === 'read' && <span className="tag">from photo</span>}
+                    {st === 'check' && <span className="tag check">check</span>}
+                    {st === 'calculated' && <span className="tag calc" title="Worked out from your other values">calculated</span>}</span>
+                  <input inputMode="decimal" value={draft.fields[f] ?? ''} placeholder={draft.source === 'scan' && !st ? 'not found' : ''}
                     aria-invalid={invalid.includes(f)} onChange={(e) => set(f, e.target.value)} />
                 </label>
               )

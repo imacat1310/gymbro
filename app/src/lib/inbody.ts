@@ -112,8 +112,9 @@ function valueAfter(text: string, label: string, field: InBodyField, scale = 1):
 
 /** The sheet's test date, if printed (2026.03.14, 2026-03-14 or 14.03.2026). */
 export function parseDate(text: string): number | undefined {
-  const iso = text.match(/\b(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})\b/)
-  const eu = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](20\d{2})\b/)
+  // OCR often adds a space after each dot: "03. 04. 2026".
+  const iso = text.match(/\b(20\d{2})\s?[.\-/]\s?(\d{1,2})\s?[.\-/]\s?(\d{1,2})\b/)
+  const eu = text.match(/\b(\d{1,2})\s?[.\-/]\s?(\d{1,2})\s?[.\-/]\s?(20\d{2})\b/)
   const parts = iso ? [+iso[1], +iso[2], +iso[3]] : eu ? [+eu[3], +eu[2], +eu[1]] : null
   if (!parts) return undefined
   const [y, mo, d] = parts

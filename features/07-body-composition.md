@@ -16,5 +16,5 @@ Body composition is health data. The photo is read on the phone, kept in memory 
 - [x] No third-party requests during a scan (self-hosted OCR): E2E checked
 - [x] Wrong numbers are worse than missing ones: values outside human ranges are dropped, and inferred decimals are flagged: unit tested
 - [x] Every value is reviewable before saving; out-of-range edits block Save
-- [ ] Real InBody sheets (270 / 570 / 770): at least 12 of 15 values correct from a decent phone photo. *Needs a real sheet photo*
+- [~] Real InBody sheets (270 / 570 / 770): at least 12 of 15 values correct from a decent phone photo. *InBody 270: 12/14 correct, 0 wrong (v0.11.0, ADR-008 rev. 1). 570/770 tested only with a synthetic sheet.*
 - [ ] Use the data: e.g. feed lean-mass asymmetry or body-fat trend into plan notes (later)

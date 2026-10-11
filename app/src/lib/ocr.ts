@@ -1,5 +1,6 @@
 // On-device OCR for InBody sheets (ADR-008). Tesseract.js is loaded on demand from self-hosted files
 // (public/ocr, copied at build time), so the photo never leaves the phone and it works offline once cached.
+import type { PSM } from 'tesseract.js'
 
 export type OcrStage = 'loading' | 'reading'
 
@@ -40,11 +41,31 @@ export async function preparePhoto(file: Blob): Promise<HTMLCanvasElement> {
   return canvas
 }
 
-/** Read all text on the photo. `onProgress` gets 0–1 per stage. */
-export async function readText(file: Blob, onProgress: (stage: OcrStage, progress: number) => void): Promise<string> {
+/** Tesseract page segmentation: '3' automatic layout (finds columns), '6' one uniform block, '11' sparse text. */
+export type PageMode = '3' | '4' | '6' | '11'
+
+/** One recognised word with its box (pixels in the prepared image). */
+export interface OcrWord { text: string; x0: number; y0: number; x1: number; y1: number; conf: number }
+
+export interface OcrResult {
+  text: string
+  words: OcrWord[]
+  width: number
+  height: number
+  /** Page tilt in radians (median text-line baseline angle); positive = lines run downhill to the right. */
+  skew: number
+}
+
+/**
+ * Read the photo once per page mode, reusing one worker: text plus every word's position.
+ * Different modes read different parts of a two-column sheet well, so callers combine the passes.
+ * `onProgress` gets the stage and 0–1 progress across all passes.
+ */
+export async function readSheet(file: Blob, onProgress: (stage: OcrStage, progress: number) => void, modes: PageMode[] = ['11', '3']): Promise<OcrResult[]> {
   onProgress('loading', 0)
-  const [{ createWorker, OEM, PSM }, image] = await Promise.all([import('tesseract.js'), preparePhoto(file)])
+  const [{ createWorker, OEM }, image] = await Promise.all([import('tesseract.js'), preparePhoto(file)])
   const base = new URL(`${import.meta.env.BASE_URL}ocr/`, location.href).href
+  let pass = 0
   const worker = await createWorker('eng', OEM.LSTM_ONLY, {
     workerPath: `${base}worker.min.js`,
     corePath: `${base}core`,
@@ -52,15 +73,28 @@ export async function readText(file: Blob, onProgress: (stage: OcrStage, progres
     // The service worker already caches these files; don't keep a second copy in IndexedDB.
     cacheMethod: 'none',
     logger: (m) => {
-      if (m.status === 'recognizing text') onProgress('reading', m.progress)
-      else onProgress('loading', m.progress)
+      if (m.status === 'recognizing text') onProgress('reading', (pass + m.progress) / modes.length)
+      else if (pass === 0) onProgress('loading', m.progress)
     },
   })
   try {
-    // One block of text lines across the full width keeps each label on the same line as its value.
-    await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK, preserve_interword_spaces: '1' })
-    const { data } = await worker.recognize(image)
-    return data.text
+    const out: OcrResult[] = []
+    for (const mode of modes) {
+      await worker.setParameters({ tessedit_pageseg_mode: mode as PSM, preserve_interword_spaces: '1' })
+      const { data } = await worker.recognize(image, {}, { text: true, blocks: true })
+      const words: OcrWord[] = []
+      const angles: number[] = []
+      for (const b of data.blocks ?? []) for (const p of b.paragraphs) for (const l of p.lines) {
+        const { x0, y0, x1, y1 } = l.baseline
+        if (x1 - x0 > image.width * 0.15) angles.push(Math.atan2(y1 - y0, x1 - x0))
+        for (const w of l.words) words.push({ text: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1, conf: Math.round(w.confidence) })
+      }
+      angles.sort((a, b) => a - b)
+      const skew = angles.length >= 3 ? angles[Math.floor(angles.length / 2)] : 0
+      out.push({ text: data.text, words, width: image.width, height: image.height, skew })
+      pass++
+    }
+    return out
   } finally {
     await worker.terminate()
   }

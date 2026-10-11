@@ -27,3 +27,20 @@ The user wants to add InBody results (body composition) by photographing the pri
 - Accuracy on real sheets is not yet known. A synthetic InBody-570-style photo read 15/15 values correctly, with two decimal points recovered and flagged. Real sheets (InBody 270/770, other languages, glare, curled paper) need testing with a real photo and parser tuning.
 - English only for now. Adding languages means more model files (each about 1–15 MB).
 - Revisit (option C) if real-sheet accuracy is poor and the backend exists, with explicit consent for sending the photo.
+
+## Revision 1 (2026-10-11): tested on a real InBody 270 sheet
+A real phone photo of an InBody 270 sheet (from the user; kept out of the public repo) read **3 of 14 values correctly, with 2 wrong**, using line-by-line text:
+- two columns share each text line, so the PBF line picked up a scale value from beside the BMR column and SMM picked up an impedance value
+- chart scale ticks sit beside the values
+- OCR splits numbers ("72. 4") and dates ("03. 04. 2026")
+
+**New reader (`lib/inbodyScan.ts`):**
+1. **Two OCR passes** (sparse text and automatic layout) on one worker; each reads different parts of the sheet well.
+2. **Word positions instead of lines:** labels are found by chaining neighbouring words. The value is the number right of the label, in the same column (the right column starts at its headers), on the same row (after **deskewing** by the median text-line angle), preferring decimals over integer ticks, larger print, and never a known BMI/PBF tick or a reference range. History rows are ignored.
+3. **Layout-specific:** score digits printed large below the label; "Level N" for visceral fat; the segmental **body figure** (InBody 270) read by position, with the centre line midway between the outermost values; the labelled segmental table (570/770), lean before fat.
+4. **The sheet checks itself:** water + protein + minerals + fat = weight (±0.25 kg) confirms those four; PBF = fat ÷ weight and BMI = weight ÷ height² (printed height, else profile height) confirm a reading or are **calculated**; SMM must be 45–65% of fat-free mass.
+5. **Status per value:** *from photo* (confirmed or agreed by two sources), *check* (one source), *calculated*, or empty.
+
+**Result:** real InBody 270 photo **12/14 correct, 0 wrong** (right arm and trunk illegible at the photo's 1106 px width); tilted 570-style synthetic sheet **12/15, 0 wrong**. About 10 s for two passes on a Mac; slower on a phone.
+
+**Privacy:** the user's sheet and its OCR output stay in the session's temporary folder. Unit tests use a synthetic layout with made-up values.
