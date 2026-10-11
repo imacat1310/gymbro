@@ -30,6 +30,12 @@ export function MorePage() {
       )}
 
       <section className="card stack">
+        <h2>Body</h2>
+        <p className="muted small">Guided photos of your posture. Photos stay on this phone and aren't saved.</p>
+        <Link to="/more/posture" className="button">Posture scan (beta)</Link>
+      </section>
+
+      <section className="card stack">
         <h2>Phone checks</h2>
         <Link to="/more/device" className="button secondary">Device check</Link>
         <Link to="/more/pose" className="button secondary">Pose speed test</Link>

@@ -9,6 +9,7 @@ import { HistoryPage } from './pages/HistoryPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { MorePage } from './pages/MorePage'
 import { PlanPage } from './pages/PlanPage'
+import { PosturePage } from './pages/PosturePage'
 import { SessionPage } from './pages/SessionPage'
 import { TodayPage } from './pages/TodayPage'
 import { WelcomePage } from './pages/WelcomePage'
@@ -68,6 +69,7 @@ function App() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="more" element={<MorePage />} />
         <Route path="more/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
+        <Route path="more/posture" element={<PosturePage />} />
         <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
         <Route path="*" element={<TodayPage />} />
       </Route>

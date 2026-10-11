@@ -8,7 +8,7 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - [x] Confirm platform ([ADR-001](decisions/ADR-001-distribution-and-platform.md): PWA accepted)
 - [x] Choose UI framework ([ADR-002](decisions/ADR-002-ui-framework.md): React + TS + Vite); scaffold PWA shell with device check screen
 - [x] Serve over HTTPS ([ADR-003](decisions/ADR-003-hosting-and-repo.md): GitHub Pages) and install on a real iPhone (✅ device check passed). Android still to test
-- [~] Spike: MediaPipe pose in the browser on target phones (measure fps), the go/no-go check for the PWA approach. *Pose test built (More → Pose speed test); awaiting iPhone results.*
+- [x] Spike: MediaPipe pose in the browser on target phones (measure fps), the go/no-go check for the PWA approach. *✅ GO: iPhone runs Lite and Full at ~30 fps (GPU). Android still to test.*
 - [ ] Supabase project: auth (Apple, Google, email), RLS policies. *Deferred: needs the user's account (see progress.md → Waiting on you)*
 - [~] **Exercise and equipment database**: ✅ hand-curated 94 exercises + 41 equipment items + 5 gym presets ([ADR-004](decisions/ADR-004-phase1-app-structure.md)). To do: contraindications, import extra exercises/images
 - [x] Design system and core navigation (Today / Gym / History / More; light + dark)
@@ -30,7 +30,7 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 - **Milestone:** closed beta (~50 users)
 
 ## Phase 3: See you (weeks 11–15)
-- [ ] Pose engine integration (MediaPipe) + capture guidance overlay
+- [x] Pose engine integration (MediaPipe) + capture guidance overlay ([ADR-006](decisions/ADR-006-posture-capture.md)): More → Posture scan, live checklist + spoken cues, auto-capture, landmarks only stored
 - [ ] Posture scan: 3-view capture, landmark metrics, findings, report
 - [ ] Plan builder v2: corrective / weak-point blocks driven by findings
 - [ ] Re-scan comparison view

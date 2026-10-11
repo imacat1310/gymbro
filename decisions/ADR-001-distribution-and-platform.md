@@ -101,3 +101,6 @@ Proposed stack:
 - Health platform integration moves behind the Capacitor wrap (Phase 5).
 - Payments (if any) go through Stripe on the web, with no App Store in-app purchase rules.
 - **Revisit if:** web pose detection is below about 15 fps on target phones, or users strongly need lock-screen alarms or HealthKit.
+
+## Validation (2026-10-11)
+Pose speed test on iPhone (iOS 26 Safari, installed PWA, GPU delegate, 480×640): **Lite 30 fps (median 27 ms)**, **Full 30 fps (median 31 ms)**, a pose was found in 100% of frames. Both keep up with the camera's 30 fps, well above the 15 fps revisit line. The PWA approach is confirmed for real-time pose. Android and long-session (thermal) behaviour are still to test.

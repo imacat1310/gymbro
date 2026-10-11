@@ -9,9 +9,9 @@ Photograph the user's posture and detect postural tendencies, left/right asymmet
 Consistent capture is what makes the results usable. The app guides each shot:
 - **Views:** front, left side, back (right side optional).
 - **Clothing:** fitted clothing or shorts/sports bra; hair tied up so the neck is visible.
-- **Setup:** phone at hip height, 2.5–3 m away, vertical, level (gyroscope check ±2°). Full body in frame, plain background.
-- **Stance:** relaxed natural standing, feet hip-width, arms by sides, eyes forward. Take 3 breaths, then auto-capture.
-- **Live overlay:** silhouette guide + checklist ("✅ level ✅ full body ✅ lighting ❌ step back").
+- **Setup:** phone at hip height, 2.5–3 m away, vertical, level (motion-sensor check: sideways ≤ 2°, forward/back ≤ 5°; see [ADR-006](../decisions/ADR-006-posture-capture.md)). Full body in frame, plain background.
+- **Stance:** relaxed natural standing, feet hip-width, arms by sides, eyes forward. Auto-capture after holding still, with a 3 s beep countdown; 5 frames are analysed with the Full model and the median landmarks kept.
+- **Live overlay:** skeleton, centre plumb line, edge guides + checklist (body found, level, light, turned correctly, head to feet in view, distance, centred, arms down), with the top fix shown and spoken.
 - Self-timer or voice trigger so the user can take the photos alone.
 
 ## Analysis pipeline
@@ -74,8 +74,8 @@ Static posture is a weak predictor of how someone moves. Add an **overhead squat
 - Re-scan reminder at 6 weeks → side-by-side overlay comparison with metric deltas
 
 ## Acceptance criteria
-- [ ] The capture flow rejects bad photos (not level, partial body, too dark)
+- [x] The capture flow rejects bad photos (not level, partial body, too dark): v0.5.0, unit + E2E tested
 - [ ] Test–retest: the same person scanned twice within 10 minutes gives metric variance < 15%
 - [ ] Every finding shows confidence; low-confidence findings are hidden or marked "possible"
 - [ ] Referral rules trigger correctly (unit-tested)
-- [ ] Raw photos deleted after processing unless the user opts to keep them
+- [x] Raw photos deleted after processing unless the user opts to keep them: v0.5.0 never stores them (no opt-in yet)

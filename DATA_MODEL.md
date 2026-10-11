@@ -69,6 +69,8 @@ gym_equipment (gym_id, equipment_id, attributes jsonb, source text, confidence r
   -- source: scan | manual | preset
 
 posture_scan (id, user_id, taken_at, views jsonb, landmarks jsonb, media_retained bool)
+-- On the phone today (IndexedDB `postureScans`, ADR-006): { id, takenAt, heightCm, camera, appVersion,
+--   views: { front|side|back: { landmarks[33], worldLandmarks[33], width, height, tilt, frames, spread, nearSide? } } }. No images.
 posture_finding (
   id, scan_id,
   code text,                      -- 'forward_head', 'rounded_shoulders', 'shoulder_elevation_left', 'anterior_pelvic_tilt', ...

@@ -3,7 +3,7 @@ import { EXERCISE_BY_ID } from '../data/exercises'
 import { buildPlan, substituteForGym, type Plan } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
-import { db, uid, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type Settings, type StoredPlan } from './db'
+import { db, uid, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
 
 export const DEFAULT_PROFILE: Profile = { goal: 'hypertrophy', experience: 'beginner', intensity: 'moderate' }
 
@@ -200,14 +200,22 @@ export async function exerciseHistory(exerciseId: string, excludeSessionId?: str
 export const toLogged = (s: SetLog): LoggedSet => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe })
 
 export async function exportAll() {
-  const [gyms, settings, sessions, sets, plans] = await Promise.all([
-    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(),
+  const [gyms, settings, sessions, sets, plans, postureScans] = await Promise.all([
+    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(),
   ])
-  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 2, gyms, settings, sessions, sets, plans }
+  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 3, gyms, settings, sessions, sets, plans, postureScans }
 }
 
 export async function resetAll() {
-  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear()])
+  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear()])
 }
+
+export async function savePostureScan(scan: Omit<PostureScan, 'id' | 'appVersion'>) {
+  const id = uid()
+  await db.postureScans.add({ ...scan, id, appVersion: __APP_VERSION__ })
+  return id
+}
+
+export const deletePostureScan = (id: string) => db.postureScans.delete(id)
 
 export type { SetKind }

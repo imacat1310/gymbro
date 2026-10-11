@@ -1,7 +1,9 @@
 // On-device database (IndexedDB via Dexie, ADR-004 §2). All weights are stored in kg.
 import Dexie, { type EntityTable } from 'dexie'
+import type { Landmark } from '@mediapipe/tasks-vision'
 import type { Muscle } from '../data/exercises'
 import type { Area } from '../data/stress'
+import type { PostureView, Tilt } from '../lib/capture'
 import type { Plan } from '../lib/planner'
 import type { Profile, Target } from '../lib/targets'
 
@@ -26,6 +28,8 @@ export interface Settings {
   limitations?: Area[]
   priorities?: Muscle[]
   activePlanId?: string
+  /** Used to convert posture-scan pixels to cm. */
+  heightCm?: number
 }
 
 export interface StoredPlan extends Plan {
@@ -71,12 +75,39 @@ export interface SetLog {
   completedAt: number
 }
 
+/** One posture photo, reduced to landmarks. The photo itself is never stored (SAFETY_PRIVACY.md, ADR-006). */
+export interface ViewCapture {
+  /** 33 normalized landmarks on the raw, un-mirrored camera frame: median of several frames. */
+  landmarks: Landmark[]
+  /** Same landmarks in metres, centred on the hips. */
+  worldLandmarks: Landmark[]
+  width: number
+  height: number
+  /** Phone tilt at capture; null when the phone gave no motion data. */
+  tilt: Tilt | null
+  frames: number
+  /** Frame-to-frame jitter as a share of body height (lower = steadier). */
+  spread: number
+  /** Side view only: which side faced the camera. */
+  nearSide?: 'left' | 'right'
+}
+
+export interface PostureScan {
+  id: string
+  takenAt: number
+  heightCm?: number
+  camera: 'user' | 'environment'
+  views: Partial<Record<PostureView, ViewCapture>>
+  appVersion: string
+}
+
 export const db = new Dexie('gymbro') as Dexie & {
   gyms: EntityTable<Gym, 'id'>
   settings: EntityTable<Settings, 'id'>
   sessions: EntityTable<Session, 'id'>
   sets: EntityTable<SetLog, 'id'>
   plans: EntityTable<StoredPlan, 'id'>
+  postureScans: EntityTable<PostureScan, 'id'>
 }
 
 db.version(1).stores({
@@ -86,5 +117,6 @@ db.version(1).stores({
   sets: 'id, sessionId, exerciseId, completedAt',
 })
 db.version(2).stores({ plans: 'id, createdAt' })
+db.version(3).stores({ postureScans: 'id, takenAt' })
 
 export const uid = () => crypto.randomUUID()

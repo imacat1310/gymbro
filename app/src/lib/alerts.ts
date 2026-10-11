@@ -28,3 +28,15 @@ export function beep(times = 3) {
   // Android only; iOS has no Vibration API.
   navigator.vibrate?.([200, 100, 200])
 }
+
+/** Spoken guidance. Replaces anything still being said, so cues never queue up behind each other. */
+export function speak(text: string) {
+  if (!('speechSynthesis' in window)) return
+  speechSynthesis.cancel()
+  const u = new SpeechSynthesisUtterance(text)
+  u.rate = 1.05
+  speechSynthesis.speak(u)
+}
+
+/** iOS only speaks after a first utterance from a tap: call this from the tap that starts a guided flow. */
+export const unlockSpeech = () => speak('')

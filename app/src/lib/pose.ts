@@ -3,6 +3,8 @@ import type { DrawingUtils, NormalizedLandmark, PoseLandmarker } from '@mediapip
 
 export type PoseModel = 'lite' | 'full'
 export type Delegate = 'GPU' | 'CPU'
+/** VIDEO for live camera frames (Lite), IMAGE for still captures (Full). */
+export type RunningMode = 'VIDEO' | 'IMAGE'
 
 export interface PoseEngine {
   landmarker: PoseLandmarker
@@ -13,22 +15,27 @@ export interface PoseEngine {
   connections: typeof PoseLandmarker.POSE_CONNECTIONS
 }
 
-// BlazePose landmark indices used by the metrics below.
+// BlazePose landmark indices (0–10 are the face).
 export const LM = {
+  nose: 0,
+  leftEar: 7, rightEar: 8,
   leftShoulder: 11, rightShoulder: 12,
+  leftWrist: 15, rightWrist: 16,
   leftHip: 23, rightHip: 24,
   leftKnee: 25, rightKnee: 26,
   leftAnkle: 27, rightAnkle: 28,
+  leftHeel: 29, rightHeel: 30,
+  leftFootIndex: 31, rightFootIndex: 32,
 } as const
 
-export async function createPoseEngine(model: PoseModel, delegate: Delegate): Promise<PoseEngine> {
+export async function createPoseEngine(model: PoseModel, delegate: Delegate, runningMode: RunningMode = 'VIDEO'): Promise<PoseEngine> {
   const t0 = performance.now()
   const vision = await import('@mediapipe/tasks-vision')
   const base = import.meta.env.BASE_URL
   const fileset = await vision.FilesetResolver.forVisionTasks(`${base}mediapipe/wasm`)
   const create = (d: Delegate) => vision.PoseLandmarker.createFromOptions(fileset, {
     baseOptions: { modelAssetPath: `${base}models/pose_landmarker_${model}.task`, delegate: d },
-    runningMode: 'VIDEO',
+    runningMode,
     numPoses: 1,
   })
 

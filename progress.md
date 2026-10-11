@@ -6,10 +6,10 @@ Track what's done, what's in progress, and decisions made during production. New
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; waiting on pose results; Supabase deferred |
+| 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; pose spike ✅ GO on iPhone; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
 | 2: Plan it | 🟨 In progress | Plan builder + Plan tab shipped (v0.4.0); equipment scan waits on AI provider |
-| 3: See you | ⬜ Not started | |
+| 3: See you | 🟨 In progress | Guided posture capture shipped (v0.5.0); metrics/findings next |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
 
@@ -18,13 +18,13 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Dogfood v0.4.0: build a plan, train with it on iPhone, collect issues
+- Try v0.5.0 posture capture on iPhone (More → Posture scan): does the guidance get you into position, and does the skeleton match?
 
 **Next**
-- Phase 3 groundwork that needs no accounts: on-device posture capture + landmark metrics (MediaPipe already runs)
+- Plans: change a plan, create several and switch between them (user request, ideas #11)
+- Phase 3: posture metrics + findings from stored scans
 
 **Waiting on you**
-- Pose speed test results on iPhone (More → Pose speed test → Lite/GPU and Full/GPU → Copy results)
 - Android device check (if you have one)
 - Decision: backend for sync + rest push notifications (Supabase account?)
 - Decision: vision AI provider + API key for the equipment scan (Phase 2)
@@ -44,10 +44,28 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Posture capture: front camera default, auto-capture, Full-model 5-frame median, landmarks only ([ADR-006](decisions/ADR-006-posture-capture.md)) | Works alone, steadier landmarks, no photos stored | Manual tap, self-timer, single frame, keeping photos |
+| 2026-10-11 | Pose spike **GO** on iPhone (both models ~30 fps); Lite for live use, Full for stills and post-set analysis | Lite has frame-time headroom; Full is at the 33 ms budget but more accurate | Full everywhere, Heavy model |
 | 2026-10-08 | *Autonomous:* plan builder = rules only (LLM later), rotation instead of weekdays, substitution at start ([ADR-005](decisions/ADR-005-plan-builder.md)) | Deterministic, offline, safe; missed days don't break the plan | LLM-written plans, fixed weekdays |
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (Phase 3 posture capture, v0.5.0)
+- **More → Posture scan (beta):** intro (setup tips, privacy note, height, camera, spoken guidance) → front, side, back. A live Lite skeleton drives an 8-item checklist: body found, phone level (motion sensor), light, turned correctly, head to feet in view, distance, centred, arms down. The top fix is shown and spoken. Everything passes + still → 3 s beep countdown → 5 frames through Full → median landmarks → review (Retake / Next) → saved.
+- **Stored:** landmarks only (DB v3 `postureScans`, export v3, included in Delete all). Photos stay in memory and are dropped after review.
+- **Bug caught in E2E:** a check right at its threshold (hand resting at hip height) flickered and restarted the countdown endlessly. Added a 0.5 s grace period, and capture only fires on a passing frame.
+- **Verified:** 75 unit tests ✅ (23 new for capture guidance); lint ✅; build ✅. Headless Edge E2E with a fake camera showing 1900s studio photos: checklist, fix hints, tilt hint, countdown, Full-model capture in ~4.5 s (5/5 frames, steady), review, retake, side-view turn hint, no console errors (12/13). Storage: save/export/delete/reset in real IndexedDB ✅.
+- **Not verified:** a full side-view capture (no usable public-domain profile photo; the detector found no body in those tried), a real person on a phone, spoken cues on iOS, motion permission on iOS.
+
+### 2026-10-11 (pose speed test on iPhone: GO)
+- iPhone, iOS 26 Safari (installed PWA), back camera 480×640, GPU delegate:
+  - **Lite:** 30.1 fps, median 27 ms, p95 28 ms, pose found 100%, visibility 0.90, load 252 ms
+  - **Full:** 30 fps, median 31 ms, p95 34 ms, pose found 100%, visibility 0.93, load 2454 ms
+- 30 fps is the camera's frame rate, so both models keep up with it. Far above the ADR-001 revisit line (15 fps): **the PWA approach is confirmed**.
+- Full sits at the 33 ms per-frame budget (p95 34 ms), so it will drop frames under load. Lite has ~6 ms headroom.
+- Model choice (small, reversible): **Lite** for live use (capture guidance, rep counting, live cues); **Full** for posture-scan stills and post-set form analysis, where speed doesn't matter and accuracy does.
+- Not tested yet: long sessions (heat throttling, the benchmark runs 10 s), an older or Android phone.
 
 ### 2026-10-08 (Phase 2 plan builder, v0.4.0, autonomous)
 - **Planner** (`lib/planner.ts`, ADR-005): split table, 10 day templates, deterministic scoring, priority muscles, pattern fallbacks, push/pull balancer, session-length fitting, weekly volume floors/ceilings with set reallocation, conservative contraindications (`data/stress.ts`), gym substitution.

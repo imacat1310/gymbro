@@ -13,7 +13,7 @@
 | App type | **Progressive Web App**, installed with "Add to Home Screen" | No store or signing needed; one codebase for iOS and Android |
 | UI | React + TypeScript + Vite, `vite-plugin-pwa` | Large ecosystem, fast builds, service worker + manifest |
 | Camera / video | `getUserMedia` + `MediaRecorder` | Native browser APIs, supported on iOS Safari and Android Chrome |
-| Pose estimation | **`@mediapipe/tasks-vision` Pose Landmarker** (33 landmarks, GPU delegate) | Runs on the phone in the browser in real time; free |
+| Pose estimation | **`@mediapipe/tasks-vision` Pose Landmarker** (33 landmarks, GPU delegate) | Runs on the phone in the browser in real time; free. **Lite** model for live use, **Full** for stills and post-set analysis (iPhone: both ~30 fps, see ADR-001 Validation) |
 | Local DB | IndexedDB via Dexie.js + `navigator.storage.persist()` | Offline sessions, sync |
 | Screen / alerts | Wake Lock API + Web Push (VAPID) | Keeps the screen on during workouts; rest-end notification |
 | Hosting | **GitHub Pages** (public repo, auto-deploy via Actions, [ADR-003](decisions/ADR-003-hosting-and-repo.md)) | Free, HTTPS (required for camera), stable address |
