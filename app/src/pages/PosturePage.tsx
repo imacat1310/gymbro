@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { PostureCapture, type Facing } from '../components/PostureCapture'
 import { db, type ViewCapture } from '../db/db'
-import { deletePostureScan, saveSettings, savePostureScan } from '../db/repo'
+import { saveSettings, savePostureScan } from '../db/repo'
 import { unlockAudio, unlockSpeech } from '../lib/alerts'
 import { VIEW_LABELS, VIEW_ORDER, type PostureView } from '../lib/capture'
 import { formatDate, useSettings } from '../lib/hooks'
@@ -20,12 +20,12 @@ async function requestMotionPermission() {
 
 export function PosturePage() {
   const settings = useSettings()
+  const navigate = useNavigate()
   const scans = useLiveQuery(() => db.postureScans.orderBy('takenAt').reverse().toArray(), [])
   const [height, setHeight] = useState('')
   const [facing, setFacing] = useState<Facing>('user')
   const [voice, setVoice] = useState(true)
   const [running, setRunning] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   const heightValue = height || (settings?.heightCm ? String(settings.heightCm) : '')
   const heightCm = Number(heightValue)
@@ -37,14 +37,13 @@ export function PosturePage() {
     if (voice) unlockSpeech()
     await requestMotionPermission()
     void saveSettings({ heightCm })
-    setSaved(false)
     setRunning(true)
   }
 
   async function finish(views: Partial<Record<PostureView, ViewCapture>>) {
-    await savePostureScan({ takenAt: Date.now(), heightCm, camera: facing, views })
+    const id = await savePostureScan({ takenAt: Date.now(), heightCm, camera: facing, views })
     setRunning(false)
-    setSaved(true)
+    navigate(`/more/posture/${id}`)
   }
 
   if (running) return <PostureCapture facing={facing} voice={voice} onDone={(v) => void finish(v)} onCancel={() => setRunning(false)} />
@@ -56,12 +55,6 @@ export function PosturePage() {
         <p className="muted">Beta · three photos: front, side and back</p>
       </header>
 
-      {saved && (
-        <section className="card suggestion" role="status">
-          <span className="sugg-icon">✓</span>
-          <span>Scan saved. Posture analysis comes in the next update; your scan will be analysed then.</span>
-        </section>
-      )}
 
       <section className="card stack">
         <h2>Before you start</h2>
@@ -103,12 +96,14 @@ export function PosturePage() {
           <h2>Your scans</h2>
           <ul className="link-list">
             {scans.map((s) => (
-              <li key={s.id} className="history-row">
-                <span>
-                  {formatDate(s.takenAt)}
-                  <span className="muted small"> · {VIEW_ORDER.filter((v) => s.views[v]).map((v) => VIEW_LABELS[v].title).join(', ')}</span>
-                </span>
-                <button className="ghost small" onClick={() => { if (confirm('Delete this scan?')) void deletePostureScan(s.id) }}>Delete</button>
+              <li key={s.id}>
+                <Link to={`/more/posture/${s.id}`} className="history-row">
+                  <span>
+                    {formatDate(s.takenAt)}
+                    <span className="muted small"> · {VIEW_ORDER.filter((v) => s.views[v]).map((v) => VIEW_LABELS[v].title).join(', ')}</span>
+                  </span>
+                  <span>Report →</span>
+                </Link>
               </li>
             ))}
           </ul>

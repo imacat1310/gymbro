@@ -317,3 +317,27 @@ button:disabled { opacity: 0.5; }
 .sheet-photo { width: 100%; border-radius: 12px; border: 1px solid var(--border); }
 .entry-detail { padding: 8px 0 12px; }
 .history-row.link-btn { display: flex; font-weight: 400; }
+
+/* Posture report */
+.referral { border: 2px solid var(--sev-marked); background: var(--danger-bg); }
+.referral h2 { color: var(--error); }
+.referral p { margin: 6px 0 0; line-height: 1.4; }
+.diagram { display: flex; justify-content: center; gap: 12px; }
+.diagram figure { margin: 0; flex: 1; max-width: 200px; text-align: center; }
+.diagram svg { width: 100%; height: 260px; }
+.bone { stroke: var(--muted); stroke-width: 6; stroke-linecap: round; }
+.bone-head { fill: none; stroke: var(--muted); stroke-width: 6; }
+.plumb { stroke: var(--border); stroke-width: 3; stroke-dasharray: 10 8; }
+.marker { stroke: var(--card); stroke-width: 4; }
+.marker.sev-none, .dot.sev-none { fill: var(--sev-ok); background: var(--sev-ok); }
+.marker.sev-mild, .dot.sev-mild { fill: var(--sev-mild); background: var(--sev-mild); }
+.marker.sev-moderate, .dot.sev-moderate { fill: var(--sev-moderate); background: var(--sev-moderate); }
+.marker.sev-marked, .dot.sev-marked { fill: var(--sev-marked); background: var(--sev-marked); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; color: var(--muted); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: 0; }
+.sev-chip { flex-shrink: 0; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1.5px solid currentColor; }
+.sev-chip.sev-mild { color: var(--sev-mild); }
+.sev-chip.sev-moderate { color: var(--sev-moderate); }
+.sev-chip.sev-marked { color: var(--sev-marked); }
+.finding p { margin: 0; line-height: 1.4; }
+.focus-chips .chip { display: inline-flex; align-items: center; text-transform: capitalize; }

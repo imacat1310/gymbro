@@ -9,7 +9,7 @@ Track what's done, what's in progress, and decisions made during production. New
 | 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; pose spike ✅ GO on iPhone; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
 | 2: Plan it | 🟨 In progress | Plan builder (v0.4.0), plan library + editing (v0.6.0); equipment scan waits on AI provider |
-| 3: See you | 🟨 In progress | Posture capture (v0.5.0), InBody body composition (v0.7.0); posture metrics next |
+| 3: See you | 🟨 In progress | Posture capture (v0.5.0), InBody (v0.7.0), posture report (v0.8.0); plan builder v2 next |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
 
@@ -18,11 +18,12 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Try on iPhone: posture capture (v0.5.0), plans (v0.6.0), InBody scan (v0.7.0: More → Body composition)
+- Try on iPhone: a full posture scan → report (v0.8.0), plans (v0.6.0), InBody scan (v0.7.0)
+- Research: open-source biomechanics scanners (user request, ideas #13)
 
 **Next**
+- Phase 3: plan builder v2 (posture muscle focus → plan priorities and corrective blocks)
 - Tune the InBody parser on a real sheet photo (personal details covered)
-- Phase 3: posture metrics + findings from stored scans
 
 **Waiting on you**
 - Android device check (if you have one)
@@ -45,6 +46,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | Posture metrics computed on the fly from landmarks, tilt-corrected, confidence-gated, with referral rules and muscle focus ([ADR-009](decisions/ADR-009-posture-metrics.md)) | Deterministic, private, improves old scans | Storing findings, LLM review |
 | 2026-10-11 | InBody scan: on-device OCR (Tesseract.js, self-hosted) + mandatory review; values only stored ([ADR-008](decisions/ADR-008-inbody-scan.md)) | User's choice; private, offline, free | Manual only, vision AI via backend |
 | 2026-10-11 | Plan library + hand editing; rule breaks warn, never block ([ADR-007](decisions/ADR-007-plan-library-and-editing.md)) | User's choice; covers "change" and "different plans" | Library only, edit one plan, block injury conflicts |
 | 2026-10-11 | Posture capture: front camera default, auto-capture, Full-model 5-frame median, landmarks only ([ADR-006](decisions/ADR-006-posture-capture.md)) | Works alone, steadier landmarks, no photos stored | Manual tap, self-timer, single frame, keeping photos |
@@ -53,6 +55,19 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (posture report, v0.8.0)
+- **Posture report** (More → Posture scan → a scan, or straight after saving one):
+  - referral card when the rules trigger
+  - front and side diagram with severity-coloured markers
+  - findings, worst first: what it is, measured value, confidence, "Possible:" when unsure, training response
+  - "Focus for your training": muscles to strengthen, ranked; areas to stretch
+  - normal-range list, thigh-to-torso proportion, what isn't measured yet, delete
+- **Maths** (`lib/posture.ts`, ADR-009): phone tilt corrected; sides from image position; front and back averaged; spec thresholds; confidence from reliability, visibility, steadiness and level data.
+- **Bundle:** the main chunk passed 500 KB, so rarely used screens (posture, report, body composition, phone checks) now load on demand: 510 → 459 KB.
+- **Verified:** 132 unit tests ✅ (28 new: each metric on a synthetic 175 cm person, tilt correction for both cameras, referral rules, confidence, muscle focus); lint ✅; build ✅. Report E2E light + dark 20/20 ✅.
+- **Learned:** the spec's forward-head measure (ear–shoulder angle with C7 thresholds) under-detects; noted in ADR-009 for tuning on real scans.
+- **Not verified:** real people on a phone; the tilt-correction direction on a real device.
 
 ### 2026-10-11 (InBody body composition, v0.7.0)
 - **User request:** scan InBody results into personal info. Options presented; the user chose on-device OCR with manual review (ADR-008).

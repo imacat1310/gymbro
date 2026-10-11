@@ -33,7 +33,7 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 ## Phase 3: See you (weeks 11–15)
 - [x] Pose engine integration (MediaPipe) + capture guidance overlay ([ADR-006](decisions/ADR-006-posture-capture.md)): More → Posture scan, live checklist + spoken cues, auto-capture, landmarks only stored
 - [x] Body composition: InBody sheet scan (on-device OCR) + manual entry, history ([ADR-008](decisions/ADR-008-inbody-scan.md), [features/07](features/07-body-composition.md))
-- [ ] Posture scan: 3-view capture, landmark metrics, findings, report
+- [x] Posture scan: 3-view capture, landmark metrics, findings, report ([ADR-009](decisions/ADR-009-posture-metrics.md)): tilt-corrected metrics, confidence, referral rules, muscle focus
 - [ ] Plan builder v2: corrective / weak-point blocks driven by findings
 - [ ] Re-scan comparison view
 - **Milestone:** public beta

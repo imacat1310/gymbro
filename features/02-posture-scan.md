@@ -68,6 +68,8 @@ Static posture is a weak predictor of how someone moves. Add an **overhead squat
 | Knee valgus | Ankle dorsiflexion mobility | Glute med (banded walks, side-lying abduction), split squats | Cue "knees out"; monitor in form check |
 
 ## Output: Posture report
+*v0.8.0 implements this on the phone (ADR-009): diagram with severity markers, findings with what / why / training response, "Focus for your training" (muscles to strengthen, areas to stretch), proportions, referral card, and a list of what isn't measured yet (pelvic tilt, kyphosis, scapular winging, foot turnout).*
+
 - Body silhouette with colour-coded markers (green / yellow / orange)
 - Per finding: what it is, possible contributors, what the plan does about it
 - "Your plan includes X corrective exercises, ~8 min per session"
@@ -76,6 +78,6 @@ Static posture is a weak predictor of how someone moves. Add an **overhead squat
 ## Acceptance criteria
 - [x] The capture flow rejects bad photos (not level, partial body, too dark): v0.5.0, unit + E2E tested
 - [ ] Test–retest: the same person scanned twice within 10 minutes gives metric variance < 15%
-- [ ] Every finding shows confidence; low-confidence findings are hidden or marked "possible"
-- [ ] Referral rules trigger correctly (unit-tested)
+- [x] Every finding shows confidence; low-confidence findings are hidden or marked "possible": v0.8.0 ([ADR-009](../decisions/ADR-009-posture-metrics.md))
+- [x] Referral rules trigger correctly (unit-tested): v0.8.0
 - [x] Raw photos deleted after processing unless the user opts to keep them: v0.5.0 never stores them (no opt-in yet)

@@ -19,6 +19,7 @@ Status: 💡 New · 🔍 Evaluating · ✅ Accepted (→ where) · ❌ Rejected 
 | 9 | 2026-10-08 | Repeat a past workout with one tap ("Do this again") | Session tracker | 💡 New | Cheap bridge until the plan builder ships |
 | 10 | 2026-10-08 | Import from Strong / Hevy CSV exports | Data | 💡 New | Fast onboarding for existing lifters |
 | 11 | 2026-10-11 | Change a plan, or create and keep several different plans and switch between them | Plan | ✅ Accepted (user request) | In progress (ADR-007) |
+| 13 | 2026-10-11 | Reuse open-source biomechanics scanners: body composition from photos; scapular winging, scoliosis-type asymmetry → muscles to strengthen | Posture scan / Body | 🔍 Evaluating (user request) | Research running; muscle focus from current findings shipped in v0.8.0 |
 | 12 | 2026-10-11 | Scan an InBody result sheet with the camera to fill in body composition (weight, muscle mass, body fat, segmental lean mass) | Profile / Data | ✅ Accepted (user request) | Built in v0.7.0 (ADR-008): on-device OCR + manual review/fallback |
 
 <!-- Template row:

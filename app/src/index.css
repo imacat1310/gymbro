@@ -10,6 +10,10 @@
   --error: #dc2626;
   --danger-bg: #fee2e2;
   --warn: #b45309;
+  --sev-ok: #16a34a;
+  --sev-mild: #ca8a04;
+  --sev-moderate: #ea580c;
+  --sev-marked: #dc2626;
   --chart-1: #16a34a;
   --chart-grid: #e2e8f0;
   --nav-h: 64px;
@@ -31,6 +35,10 @@
     --error: #f87171;
     --danger-bg: #450a0a;
     --warn: #fbbf24;
+    --sev-ok: #22c55e;
+    --sev-mild: #facc15;
+    --sev-moderate: #fb923c;
+    --sev-marked: #f87171;
     /* Validated with the dataviz palette checker against the dark card surface. */
     --chart-1: #16a34a;
     --chart-grid: #334155;

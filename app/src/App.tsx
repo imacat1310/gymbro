@@ -1,21 +1,25 @@
+import { lazy, Suspense } from 'react'
 import { Link, Outlet, Route, Routes, useLocation } from 'react-router'
 import { BottomNav } from './components/BottomNav'
-import { DeviceCheck } from './components/DeviceCheck'
-import { PoseTest } from './components/PoseTest'
 import { formatDuration, useActiveSession, useNow } from './lib/hooks'
-import { BodyPage } from './pages/BodyPage'
 import { ExercisePage } from './pages/ExercisePage'
 import { GymPage } from './pages/GymPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { MorePage } from './pages/MorePage'
 import { PlanPage } from './pages/PlanPage'
-import { PosturePage } from './pages/PosturePage'
 import { SessionPage } from './pages/SessionPage'
 import { TodayPage } from './pages/TodayPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { WorkoutPage } from './pages/WorkoutPage'
 import './App.css'
+
+// Rarely opened screens load on demand to keep the first load small (the service worker still precaches them).
+const DeviceCheck = lazy(() => import('./components/DeviceCheck').then((m) => ({ default: m.DeviceCheck })))
+const PoseTest = lazy(() => import('./components/PoseTest').then((m) => ({ default: m.PoseTest })))
+const BodyPage = lazy(() => import('./pages/BodyPage').then((m) => ({ default: m.BodyPage })))
+const PosturePage = lazy(() => import('./pages/PosturePage').then((m) => ({ default: m.PosturePage })))
+const PostureReportPage = lazy(() => import('./pages/PostureReportPage').then((m) => ({ default: m.PostureReportPage })))
 
 /** Shown on every screen except the workout itself, so an active session is never lost. */
 function ActiveWorkoutBanner() {
@@ -38,7 +42,9 @@ function Layout() {
     <>
       {!onWorkout && <ActiveWorkoutBanner />}
       <main className="app">
-        <Outlet />
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          <Outlet />
+        </Suspense>
         <p className="muted small footer">GymBro v{__APP_VERSION__}</p>
       </main>
       {!onWorkout && <BottomNav />}
@@ -71,6 +77,7 @@ function App() {
         <Route path="more" element={<MorePage />} />
         <Route path="more/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
         <Route path="more/posture" element={<PosturePage />} />
+        <Route path="more/posture/:id" element={<PostureReportPage />} />
         <Route path="more/body" element={<BodyPage />} />
         <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
         <Route path="*" element={<TodayPage />} />
