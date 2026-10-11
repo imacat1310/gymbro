@@ -1,7 +1,8 @@
 // Data access helpers. Components read through useLiveQuery and write through these functions.
 import { EXERCISE_BY_ID, type Muscle } from '../data/exercises'
 import type { Area } from '../data/stress'
-import { bodyPlanInput, type BodyData } from '../lib/bodyInput'
+import type { BodyData } from '../lib/bodyInput'
+import type { FocusId } from '../lib/focus'
 import { addDay } from '../lib/planEdit'
 import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
@@ -97,7 +98,11 @@ export async function getBodyData(): Promise<BodyData> {
   return { scan, trunk, comp, acks: s.referralAck }
 }
 
-export const getBodyPlanInput = async () => bodyPlanInput(await getBodyData())
+/** Loaded on demand: posture analysis is only needed when a plan is built or the Plan tab checks for new data. */
+export async function getBodyPlanInput() {
+  const [{ bodyPlanInput }, data] = await Promise.all([import('../lib/bodyInput'), getBodyData()])
+  return bodyPlanInput(data)
+}
 
 /** The user read the referral card and chose to include the paused exercises again. */
 export async function acknowledgeReferrals(ids: string[]) {
@@ -110,6 +115,8 @@ export interface PlanPrefs {
   name: string
   schedule: Schedule
   priorities: Muscle[]
+  /** Session focus per day; when rebuilding and not given, the plan's current focuses are kept. */
+  dayFocus?: (FocusId | null)[]
 }
 
 /**
@@ -120,6 +127,8 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
   const s = await getSettings()
   const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
   const body = await getBodyPlanInput()
+  const previous = replaceId ? await db.plans.get(replaceId) : undefined
+  const dayFocus = (prefs.dayFocus ?? previous?.dayFocus ?? []).slice(0, prefs.schedule.daysPerWeek)
   const plan: Plan = buildPlan({
     profile: s.profile,
     daysPerWeek: prefs.schedule.daysPerWeek,
@@ -128,8 +137,9 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     limitations: s.limitations ?? [],
     priorities: prefs.priorities,
     body,
+    dayFocus,
   })
-  const old = replaceId ? await db.plans.get(replaceId) : undefined
+  const old = previous
   const now = Date.now()
   const stored: StoredPlan = {
     ...plan,
@@ -142,6 +152,7 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     priorities: prefs.priorities,
     bodyDataAt: body?.latestAt,
     pausedSpinal: !!body?.pause,
+    dayFocus: dayFocus.some(Boolean) ? dayFocus : undefined,
   }
   await db.transaction('rw', db.plans, db.settings, async () => {
     await db.plans.put(stored)
@@ -175,6 +186,16 @@ export async function duplicatePlan(id: string): Promise<StoredPlan | undefined>
   await db.plans.add(copy)
   await saveSettings({ activePlanId: copy.id })
   return copy
+}
+
+/** Give one day of a plan a session focus (or null for the standard day) and rebuild the plan. */
+export async function setDayFocus(planId: string, dayIndex: number, focus: FocusId | null) {
+  const plan = await db.plans.get(planId)
+  if (!plan) return
+  const dayFocus = [...(plan.dayFocus ?? [])]
+  while (dayFocus.length < plan.days.length) dayFocus.push(null)
+  dayFocus[dayIndex] = focus
+  await buildAndSavePlan({ name: plan.name, schedule: plan.schedule, priorities: plan.priorities, dayFocus }, plan.id)
 }
 
 export const renamePlan = (id: string, name: string) =>

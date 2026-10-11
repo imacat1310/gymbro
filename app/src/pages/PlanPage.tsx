@@ -7,9 +7,10 @@ import { PlanEditor } from '../components/PlanEditor'
 import type { Muscle } from '../data/exercises'
 import { db, type Schedule, type Settings, type StoredPlan } from '../db/db'
 import {
-  acknowledgeReferrals, buildAndSavePlan, createEmptyPlan, getBodyPlanInput, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
+  acknowledgeReferrals, buildAndSavePlan, createEmptyPlan, getBodyPlanInput, setDayFocus, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
   saveSettings, setActivePlan, startSession, swapPlanExercise,
 } from '../db/repo'
+import { FOCUS, FOCUS_ORDER, type FocusId } from '../lib/focus'
 import { checkPlan, type PlanWarning } from '../lib/planEdit'
 import { useActiveSession, useActiveGym, useSettings } from '../lib/hooks'
 import { muscleLabel } from '../lib/planner'
@@ -30,6 +31,7 @@ export function PlanPage() {
   const body = useLiveQuery(getBodyPlanInput, [])
   const [mode, setMode] = useState<Mode>('view')
   const [showPlans, setShowPlans] = useState(false)
+  const [focusFor, setFocusFor] = useState<number | null>(null)
 
   if (!settings || plan === undefined || plans === undefined) return null
   const current = mode === 'new' || !plan ? null : plan
@@ -63,6 +65,12 @@ export function PlanPage() {
 
   const stale = !!(current && body && (current.bodyDataAt ?? 0) < body.latestAt)
   const pauseLifted = !!(current?.pausedSpinal && !body?.pause)
+
+  async function chooseFocus(p: StoredPlan, dayIndex: number, focus: FocusId | null) {
+    setFocusFor(null)
+    if (p.edited && !confirm('Changing a day\'s focus rebuilds the plan and replaces your manual changes. Continue?')) return
+    await setDayFocus(p.id, dayIndex, focus)
+  }
 
   async function remove(p: StoredPlan) {
     if (confirm(`Delete "${p.name}"? Workouts you already logged are kept.`)) await deletePlan(p.id)
@@ -151,6 +159,9 @@ export function PlanPage() {
                 <div>
                   <h2>{day.name}</h2>
                   <div className="muted small">~{day.estMinutes} min · {day.items.length} exercises{dayIndex === nextDay ? ' · next up' : ''}</div>
+                  <button className="focus-btn" onClick={() => setFocusFor(dayIndex)} aria-label={`Change focus of ${day.name}`}>
+                    Focus: {current.dayFocus?.[dayIndex] ? FOCUS[current.dayFocus[dayIndex]!].label : 'Standard'} ▾
+                  </button>
                 </div>
                 {!active && day.items.length > 0 && (
                   <button className={dayIndex === nextDay ? '' : 'secondary'} onClick={() => void start(current, dayIndex)}>Start</button>
@@ -185,6 +196,33 @@ export function PlanPage() {
             </div>
           </section>
         </>
+      )}
+
+      {focusFor !== null && current && (
+        <div className="sheet-backdrop" onClick={() => setFocusFor(null)}>
+          <div className="sheet" role="dialog" aria-label="Session focus" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head">
+              <h2>Session focus</h2>
+              <button className="ghost" onClick={() => setFocusFor(null)}>Close</button>
+            </div>
+            <p className="muted small">Rebuilds {current.days[focusFor]?.name ?? 'this day'} for a sport or a quality. Other days stay as they are.</p>
+            <ul className="pick-list">
+              {([null, ...FOCUS_ORDER] as (FocusId | null)[]).map((f, i, all) => {
+                const groupStart = f && (i === 1 || FOCUS[f].group !== (all[i - 1] ? FOCUS[all[i - 1]!].group : ''))
+                const on = (current.dayFocus?.[focusFor] ?? null) === f
+                return (
+                  <li key={f ?? 'standard'}>
+                    {groupStart && <div className="pick-group">{FOCUS[f!].group === 'sport' ? 'Sports' : 'General focus'}</div>}
+                    <button className="pick-item" aria-current={on} onClick={() => void chooseFocus(current, focusFor, f)}>
+                      <span>{on ? '✓ ' : ''}{f ? FOCUS[f].label : 'Standard'}</span>
+                      <span className="muted small">{f ? FOCUS[f].blurb : `The plan's own ${current.splitName.toLowerCase()} day.`}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
       )}
 
       {showPlans && (

@@ -3,6 +3,7 @@
 import { EXERCISE_BY_ID, EXERCISES, PATTERN_LABELS, performableExercises, type Exercise, type Muscle, type Pattern } from '../data/exercises'
 import { isContraindicated, type Area } from '../data/stress'
 import type { BodyPlanInput } from './bodyInput'
+import { ADVANCED_ONLY, FOCUS, focusTarget, type FocusId } from './focus'
 import { defaultTarget, type Experience, type Intensity, type Profile, type Target } from './targets'
 
 export type Role = 'main' | 'secondary' | 'accessory'
@@ -17,6 +18,8 @@ export interface PlanInput {
   exclude?: string[]
   /** Body data (posture scan, trunk test, InBody) turned into plan input; see lib/bodyInput.ts. */
   body?: BodyPlanInput
+  /** Per-day session focus (a sport or a general quality); empty = the split's standard day (ADR-015). */
+  dayFocus?: (FocusId | null | undefined)[]
 }
 
 export interface PlanItem {
@@ -29,6 +32,8 @@ export interface PlanItem {
   keep?: boolean
   /** Light corrective from body data (ADR-014): fixed at 2 easy sets, never given volume top-ups. */
   corrective?: boolean
+  /** Prescribed by a session focus (ADR-015): its sets are part of the method, so no volume top-ups. */
+  fixed?: boolean
 }
 
 export interface PlanDay {
@@ -333,7 +338,7 @@ function balanceVolume(days: PlanDay[], input: PlanInput) {
   for (const { muscles, target } of volumeGroups(input, days)) {
     while (groupSets(days, muscles) < target) {
       const options = days.flatMap((d) => d.items
-        .filter((i) => !i.corrective && EXERCISE_BY_ID.get(i.exerciseId)!.pattern !== 'corrective' && EXERCISE_BY_ID.get(i.exerciseId)!.primary.some((m) => muscles.includes(m)) && i.target.sets < MAX_SETS_PER_EXERCISE)
+        .filter((i) => !i.corrective && !i.fixed && EXERCISE_BY_ID.get(i.exerciseId)!.pattern !== 'corrective' && EXERCISE_BY_ID.get(i.exerciseId)!.primary.some((m) => muscles.includes(m)) && i.target.sets < MAX_SETS_PER_EXERCISE)
         .filter((i) => estimateMinutes(d.items.map((x) => (x === i ? { ...x, target: { ...x.target, sets: x.target.sets + 1 } } : x))) <= input.sessionMinutes)
         .map((i) => ({ d, i })))
         .sort((a, b) => a.i.target.sets - b.i.target.sets || ROLE_ORDER[a.i.role] - ROLE_ORDER[b.i.role])
@@ -380,6 +385,35 @@ function correctiveTarget(ex: Exercise): Target {
     : { sets: 2, repMin: 10, repMax: 15, targetRpe: 7, restSec: 45 }
 }
 
+/**
+ * Items for a focus day: for each slot, the first listed exercise the gym allows, the user's limitations permit and
+ * (for beginners) isn't advanced-only. Power and the first three injury-prevention slots survive time trimming
+ * (each sport lists its prevention work by injury risk).
+ */
+function focusItems(focus: FocusId, input: PlanInput, used: Set<string>): PlanItem[] {
+  const can = new Set(performableExercises(input.equipment).filter((e) => !isContraindicated(e.id, input.limitations)).map((e) => e.id))
+  const items: PlanItem[] = []
+  let prehab = 0
+  for (const slot of FOCUS[focus].slots) {
+    const ok = slot.ids.filter((id) => can.has(id) && !items.some((i) => i.exerciseId === id)
+      && (input.profile.experience !== 'beginner' || !ADVANCED_ONLY.has(id)))
+    if (!ok.length) continue
+    const ex = EXERCISE_BY_ID.get(ok[0])!
+    used.add(ex.id)
+    const protect = slot.kind === 'plyo' || slot.kind === 'power' || (slot.kind === 'prehab' && prehab++ < 3)
+    items.push({
+      exerciseId: ex.id,
+      role: slot.kind === 'strength' ? 'main' : slot.kind === 'plyo' || slot.kind === 'power' ? 'secondary' : 'accessory',
+      target: focusTarget(slot.kind, ex.measure === 'time', input.profile.experience),
+      reason: slot.reason,
+      alternatives: ok.slice(1, 4),
+      keep: protect || undefined,
+      fixed: true,
+    })
+  }
+  return items
+}
+
 export function buildPlan(input: PlanInput): Plan {
   // An unacknowledged referral pauses heavy spinal loading, exactly like a lower-back limitation (SAFETY_PRIVACY.md).
   if (input.body?.pause && !input.limitations.includes('lower_back')) input = { ...input, limitations: [...input.limitations, 'lower_back'] }
@@ -393,7 +427,12 @@ export function buildPlan(input: PlanInput): Plan {
   const priorities = input.priorities.slice(0, 3)
 
   // 1. Fill every slot.
-  const drafts = split.templates.map((tpl) => {
+  const drafts = split.templates.map((template, dayIndex) => {
+    const focus = input.dayFocus?.[dayIndex]
+    if (focus && FOCUS[focus]) {
+      return { tpl: { ...template, name: `${FOCUS[focus].label} day` }, items: focusItems(focus, input, used) }
+    }
+    const tpl = template
     const slots = [...tpl.slots]
     // Weak points: one extra accessory per priority muscle on days that train its region. Your own priorities
     // first, then muscles your body data says to strengthen.

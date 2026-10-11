@@ -185,3 +185,10 @@ input::placeholder { color: #4b6478; }
 @keyframes hud-sweep { to { left: 100%; } }
 @media (prefers-reduced-motion: reduce) { 
 .hud-banner, .hud-banner::after { animation: none; } }
+
+/* Session focus picker */
+.focus-btn {
+  clip-path: none; margin-top: 6px; min-height: 30px; padding: 0 10px; font-size: 0.68rem;
+  background: rgba(34, 211, 238, 0.06); color: var(--accent-hi); border: 1px solid var(--hud-dim); border-radius: 2px;
+}
+.pick-group { margin: 12px 0 4px; font-family: var(--font-title); font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }

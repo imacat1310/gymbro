@@ -12,18 +12,21 @@ const STRESS_BY_AREA: Record<Area, string[]> = {
   lower_back: [
     'barbell_back_squat', 'barbell_front_squat', 'barbell_deadlift', 'barbell_rdl', 'db_rdl', 'db_single_leg_rdl',
     'trap_bar_deadlift', 'barbell_row', 'barbell_ohp', 'standing_db_press', 'kb_swing', 'back_extension',
+    'push_press', 'med_ball_slam', 'farmers_carry', 'burpee',
   ],
   knee: [
     'barbell_back_squat', 'barbell_front_squat', 'smith_squat', 'hack_squat', 'leg_extension',
     'db_walking_lunge', 'db_bulgarian_split_squat',
+    'box_jump', 'squat_jump', 'broad_jump', 'lateral_bound', 'skater_jump', 'split_squat_jump', 'nordic_curl', 'burpee',
   ],
   shoulder: [
     'barbell_ohp', 'seated_db_press', 'standing_db_press', 'machine_shoulder_press', 'pike_push_up',
     'dip', 'bench_dip', 'barbell_bench_press', 'incline_barbell_bench', 'db_fly',
+    'push_press', 'med_ball_slam',
   ],
-  wrist: ['push_up', 'barbell_front_squat', 'barbell_curl', 'bench_dip', 'pike_push_up'],
+  wrist: ['push_up', 'barbell_front_squat', 'barbell_curl', 'bench_dip', 'pike_push_up', 'burpee', 'mountain_climber'],
   elbow: ['skull_crusher', 'overhead_cable_triceps_ext', 'close_grip_bench', 'barbell_curl', 'preacher_curl', 'dip', 'chin_up'],
-  hip: ['copenhagen_plank', 'db_bulgarian_split_squat', 'couch_stretch'],
+  hip: ['copenhagen_plank', 'db_bulgarian_split_squat', 'couch_stretch', 'lateral_lunge', 'lateral_bound', 'skater_jump'],
 }
 
 export function stressedAreas(exerciseId: string): Area[] {

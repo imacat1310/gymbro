@@ -6,6 +6,7 @@ import type { Area } from '../data/stress'
 import type { PostureView, Tilt } from '../lib/capture'
 import type { InBodyField, InBodyValues } from '../lib/inbody'
 import type { TrunkResult } from '../lib/trunk'
+import type { FocusId } from '../lib/focus'
 import type { Plan } from '../lib/planner'
 import type { Profile, Target } from '../lib/targets'
 
@@ -52,6 +53,8 @@ export interface StoredPlan extends Plan {
   bodyDataAt?: number
   /** Built while a safety pause was active: rebuild once it's lifted. */
   pausedSpinal?: boolean
+  /** Session focus per day (a sport or quality); kept across rebuilds (ADR-015). */
+  dayFocus?: (FocusId | null)[]
 }
 
 /** One exercise slot inside a session. */

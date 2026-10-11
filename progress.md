@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Plan builder v2 (v0.15.0): body data → plan, with the safety pause. Try it: Plan → "Rebuild with my body data"
-- Next: Design pass → Today (level, activity goal, badges)
+- Session focus (v0.16.0): Plan → a day's "Focus" button → a sport or quality
+- Next: Design pass → Today (level, activity goal, badges); AI coach decision pending (ideas #15)
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -28,7 +28,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 **Waiting on you**
 - Android device check (if you have one)
 - Decision: backend for sync + rest push notifications (Supabase account?)
-- Decision: vision AI provider + API key for the equipment scan (Phase 2)
+- Decision: vision AI provider + API key for the equipment scan (Phase 2), and whether to add an opt-in AI coach chat (same backend decision, ideas #15)
 - A photo of a real InBody sheet (cover name/ID) to test OCR accuracy
 
 **Known gaps**
@@ -49,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Session focus: sport-specific gym days, 6 sports + 4 focuses, curated slots ([ADR-015](decisions/ADR-015-session-focus-sport-days.md)) | User's choice | Playing days (later), both |
 | 2026-10-12 | Plan builder v2: body data → pause, correctives, strengthen, weaker side; rebuild prompts ([ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)) | User asked how the body report relates to the plan; it didn't | Live changes to existing plans |
 | 2026-10-11 | Sci-fi HUD theme replaces Bonfire ([ADR-013](decisions/ADR-013-scifi-hud-theme.md)) | User asked for futuristic; chose HUD from three mockups | Cyberpunk neon, sleek glass |
 | 2026-10-11 | Bonfire theme (souls + pixel, dark only), self-hosted OFL fonts, Profile tab replaces More ([ADR-012](decisions/ADR-012-bonfire-theme.md)) | User's choice from three mockups | Pure Souls, full pixel |
@@ -65,6 +66,17 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (session focus / sport days, v0.16.0)
+- **User request:** change a plan session for another sport. Options were presented; the user chose sport-specific gym days for court sports, combat/swimming and general focuses (ADR-015).
+- **Built:**
+  - Focus button on every plan day → sheet with Standard / 6 sports / 4 general focuses
+  - curated slot templates (power → movement → strength → injury prevention ordered by risk)
+  - 28 new exercises with joint-stress tags
+  - focus kept through rebuilds
+- **Fixed during testing:** badminton's Achilles work was trimmed for time (now ordered by risk, three prevention slots protected); bodyweight-only gyms got thin power/martial-arts days (fallbacks added); the main bundle crossed 500 KB (body analysis now loads on demand: 487 KB).
+- **Verified:** 200 unit tests ✅ (11 new: every listed exercise exists, every focus × every gym preset, knee limitation, safety pause, beginners, determinism); lint ✅; build ✅; E2E 10/10 ✅ (picker, badminton day contents and reasons, rebuild keeps focus, Today offers it, back to Standard, no errors).
+- **AI coach research** (user asked about open-source AI fitness coaches, Arvo, Jotform): recorded in ideas #15; needs the backend/AI decision.
 
 ### 2026-10-12 (plan builder v2, v0.15.0)
 - **Body data now drives the plan** (ADR-014):

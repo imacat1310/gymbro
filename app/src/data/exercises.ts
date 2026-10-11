@@ -6,6 +6,8 @@ export type Pattern =
   | 'squat' | 'lunge' | 'hinge' | 'knee_iso' | 'hip_iso' | 'calves'
   | 'h_push' | 'v_push' | 'h_pull' | 'v_pull' | 'shoulder_iso' | 'arms'
   | 'core' | 'carry' | 'corrective'
+  // Athletic patterns for sport and focus days (features/03 §8c). Standard templates don't use them.
+  | 'power' | 'agility' | 'prehab' | 'conditioning'
 
 export type LoadType = 'barbell' | 'dumbbell' | 'kettlebell' | 'machine' | 'cable' | 'bodyweight' | 'band'
 
@@ -33,6 +35,7 @@ export const PATTERN_LABELS: Record<Pattern, string> = {
   calves: 'Calves', h_push: 'Horizontal push', v_push: 'Vertical push', h_pull: 'Horizontal pull',
   v_pull: 'Vertical pull', shoulder_iso: 'Shoulders', arms: 'Arms', core: 'Core', carry: 'Carry',
   corrective: 'Mobility & posture',
+  power: 'Power (jumps & throws)', agility: 'Agility', prehab: 'Injury prevention', conditioning: 'Conditioning',
 }
 
 export const LOWER_BODY_PATTERNS: Pattern[] = ['squat', 'lunge', 'hinge', 'knee_iso', 'hip_iso', 'calves']
@@ -268,6 +271,72 @@ export const EXERCISES: Exercise[] = [
     ['Elbow at shoulder height', 'Step through gently'], { measure: 'time' }),
   ex('couch_stretch', 'Couch stretch', 'corrective', 'isolation', 'bodyweight', NONE, ['hip_flexors', 'quads'],
     ['Squeeze the glute of the back leg', 'Ribs down'], { measure: 'time', unilateral: true }),
+  ex('hip_9090', '90/90 hip switch', 'corrective', 'isolation', 'bodyweight', NONE, ['glutes', 'hip_flexors'],
+    ['Sit tall', 'Rotate both knees side to side without using your hands'], { measure: 'time' }),
+  ex('worlds_greatest_stretch', "World's greatest stretch", 'corrective', 'isolation', 'bodyweight', NONE, ['hip_flexors', 'upper_back'],
+    ['Long lunge, elbow to instep', 'Rotate and reach to the ceiling'], { measure: 'time', unilateral: true }),
+  ex('ankle_dorsiflexion', 'Knee-to-wall ankle mobilisation', 'corrective', 'isolation', 'bodyweight', NONE, ['calves'],
+    ['Heel stays down', 'Drive the knee over the little toes'], { measure: 'time', unilateral: true }),
+
+  // Power: jumps and throws. Quality over fatigue: few reps, full rest, maximum intent.
+  ex('box_jump', 'Box jump', 'power', 'compound', 'bodyweight', [['box']], ['quads', 'glutes'],
+    ['Swing the arms', 'Land softly, knees over toes', 'Step down, don\'t jump down'], { secondary: ['calves'] }),
+  ex('squat_jump', 'Squat jump', 'power', 'compound', 'bodyweight', NONE, ['quads', 'glutes'],
+    ['Quarter squat, then jump as high as you can', 'Stick a quiet landing'], { secondary: ['calves'] }),
+  ex('broad_jump', 'Broad jump', 'power', 'compound', 'bodyweight', NONE, ['glutes', 'quads'],
+    ['Swing and jump forward', 'Land in a squat and hold 2 s'], { secondary: ['hamstrings'] }),
+  ex('lateral_bound', 'Lateral bound', 'power', 'compound', 'bodyweight', NONE, ['glute_med', 'quads'],
+    ['Push sideways off one leg', 'Stick the landing on the other for 2 s'], { unilateral: true, secondary: ['adductors'] }),
+  ex('skater_jump', 'Skater jump', 'power', 'compound', 'bodyweight', NONE, ['glute_med', 'quads'],
+    ['Quick side-to-side hops', 'Land on the outside leg, hips back'], { unilateral: true, secondary: ['calves'] }),
+  ex('split_squat_jump', 'Split squat jump', 'power', 'compound', 'bodyweight', NONE, ['quads', 'glutes'],
+    ['Switch legs in the air', 'Land soft, front knee over the foot'], { secondary: ['calves'] }),
+  ex('pogo_jump', 'Pogo hops', 'power', 'isolation', 'bodyweight', NONE, ['calves'],
+    ['Stiff ankles, small fast bounces', 'Barely bend the knees'], { measure: 'time' }),
+  ex('med_ball_chest_pass', 'Med ball chest pass', 'power', 'compound', 'bodyweight', [['medicine_ball']], ['chest', 'triceps'],
+    ['Throw against a wall as hard as you can', 'Catch and reset'], { secondary: ['front_delt'] }),
+  ex('med_ball_slam', 'Med ball slam', 'power', 'compound', 'bodyweight', [['medicine_ball']], ['lats', 'abs'],
+    ['Reach high on your toes', 'Slam through the floor'], { secondary: ['triceps'] }),
+  ex('med_ball_rotational_throw', 'Med ball rotational throw', 'power', 'compound', 'bodyweight', [['medicine_ball']], ['obliques'],
+    ['Side-on to a wall', 'Rotate from the back hip and throw hard'], { unilateral: true, secondary: ['glutes'] }),
+  ex('cable_woodchop', 'Cable woodchop', 'power', 'compound', 'cable', [['cable_station'], ['functional_trainer'], ['cable_crossover'], ['resistance_bands']], ['obliques'],
+    ['Pivot the back foot', 'Turn from the hips, arms stay long'], { unilateral: true, secondary: ['abs'] }),
+  ex('landmine_rotation', 'Landmine rotation', 'power', 'compound', 'barbell', [['landmine', 'barbell']], ['obliques'],
+    ['Arms long', 'Rotate the bar arc to arc, hips follow'], { secondary: ['front_delt'] }),
+  ex('push_press', 'Push press', 'power', 'compound', 'barbell', [['barbell', 'power_rack'], ['barbell', 'squat_stand'], ['dumbbells']], ['front_delt', 'triceps'],
+    ['Short dip, drive with the legs', 'Lock out overhead'], { secondary: ['quads'] }),
+
+  // Agility: changing direction under control.
+  ex('lateral_lunge', 'Lateral lunge', 'agility', 'compound', 'bodyweight', NONE, ['quads', 'adductors'],
+    ['Step wide, sit back into one hip', 'Other leg straight, push back to the middle'], { unilateral: true, secondary: ['glutes'] }),
+  ex('lateral_shuffle', 'Lateral shuffle', 'agility', 'compound', 'bodyweight', NONE, ['glute_med', 'quads'],
+    ['Low athletic stance', 'Quick feet, don\'t cross them'], { measure: 'time', secondary: ['calves'] }),
+
+  // Injury prevention for the joints each sport loads most.
+  ex('band_external_rotation', 'External rotation (band or cable)', 'prehab', 'isolation', 'band', [['resistance_bands'], ['cable_station'], ['functional_trainer'], ['cable_crossover']], ['rear_delt'],
+    ['Elbow tucked to your side', 'Rotate out slowly, 3 s back'], { unilateral: true }),
+  ex('wrist_curl', 'Wrist curl', 'prehab', 'isolation', 'dumbbell', [['dumbbells']], ['forearms'],
+    ['Forearm on your thigh', 'Full range, slow lowering']),
+  ex('reverse_wrist_curl', 'Reverse wrist curl', 'prehab', 'isolation', 'dumbbell', [['dumbbells']], ['forearms'],
+    ['Palm down, light weight', 'Protects the elbow (tennis elbow)']),
+  ex('nordic_curl', 'Nordic hamstring curl', 'prehab', 'isolation', 'bodyweight', [['roman_chair'], ['flat_bench']], ['hamstrings'],
+    ['Feet anchored', 'Lower as slowly as you can, push back up with your hands']),
+  ex('single_leg_calf_raise', 'Single-leg calf raise', 'prehab', 'isolation', 'bodyweight', NONE, ['calves'],
+    ['On a step, full range', '3 s down: builds the Achilles'], { unilateral: true }),
+  ex('single_leg_balance', 'Single-leg balance reach', 'prehab', 'isolation', 'bodyweight', NONE, ['glute_med'],
+    ['Stand on one leg, reach the other foot forward, side and back', 'Knee stays over the foot'], { measure: 'time', unilateral: true, secondary: ['calves'] }),
+
+  // Conditioning: work in rounds.
+  ex('rower_intervals', 'Rower intervals', 'conditioning', 'compound', 'machine', [['rower']], ['lats', 'quads'],
+    ['Legs, then back, then arms', 'Hard work, easy recovery'], { measure: 'time', secondary: ['hamstrings'] }),
+  ex('bike_intervals', 'Bike intervals', 'conditioning', 'compound', 'machine', [['bike']], ['quads'],
+    ['High cadence on the work intervals'], { measure: 'time', secondary: ['glutes'] }),
+  ex('burpee', 'Burpee', 'conditioning', 'compound', 'bodyweight', NONE, ['quads', 'chest'],
+    ['Chest to the floor, jump at the top', 'Steady pace, no sloppy reps'], { secondary: ['triceps', 'abs'] }),
+  ex('mountain_climber', 'Mountain climber', 'conditioning', 'compound', 'bodyweight', NONE, ['abs'],
+    ['Hands under shoulders', 'Drive the knees, hips stay low'], { measure: 'time', secondary: ['hip_flexors'] }),
+  ex('shadow_boxing', 'Shadow boxing rounds', 'conditioning', 'compound', 'bodyweight', NONE, ['side_delt', 'obliques'],
+    ['Stay light on your feet', 'Hands back to guard after every punch'], { measure: 'time', secondary: ['calves'] }),
 ]
 
 export const EXERCISE_BY_ID = new Map(EXERCISES.map((e) => [e.id, e]))

@@ -85,6 +85,9 @@ Estimate time = Σ(sets × (set duration + rest)) + warm-up + transitions. If it
 ### 8a. Body data (plan builder v2, [ADR-014](../decisions/ADR-014-plan-builder-v2-body-data.md))
 The latest posture scan, trunk test and InBody result feed the plan: a safety pause on spinal loading after an unacknowledged referral; a ~8-min corrective block from confident findings; muscles to strengthen as extra accessories; "start with your weaker side, +1 set" from a ≥ 5% InBody lean-mass gap. Every addition names its finding, and the plan offers a rebuild when newer body data exists.
 
+### 8c. Session focus ([ADR-015](../decisions/ADR-015-session-focus-sport-days.md))
+Any plan day can be given a focus: Basketball, Badminton, Volleyball, Tennis/pickleball, Martial arts/boxing, Swimming, or Explosive power, Speed & agility, Endurance, Mobility. The day is rebuilt from curated slots: power and movement first, then strength, then injury prevention for the joints that sport loads most, ordered by injury risk. It respects equipment, limitations, the safety pause and beginner limits, and is kept through rebuilds.
+
 ### 8b. Plan library and hand edits ([ADR-007](../decisions/ADR-007-plan-library-and-editing.md))
 - Users keep several named plans (each with its own gym, schedule and priority muscles) and switch the active one. Injuries are global.
 - Plans can be built by the rules engine or started empty, then edited by hand: exercises (add, remove, reorder, sets/reps/rest) and days (add, remove, rename, reorder).
