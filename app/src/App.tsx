@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Link, Outlet, Route, Routes, useLocation } from 'react-router'
 import { BottomNav } from './components/BottomNav'
+import { UpdateBanner } from './components/UpdateBanner'
 import { formatDuration, useActiveSession, useNow } from './lib/hooks'
 import { ExercisePage } from './pages/ExercisePage'
 import { GymPage } from './pages/GymPage'
@@ -65,7 +66,9 @@ function Wrap({ title, children }: { title: string; children: React.ReactNode })
 
 function App() {
   return (
-    <Routes>
+    <>
+      <UpdateBanner />
+      <Routes>
       <Route path="/welcome" element={<main className="app"><WelcomePage /></main>} />
       <Route element={<Layout />}>
         <Route index element={<TodayPage />} />
@@ -86,7 +89,8 @@ function App() {
         <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
         <Route path="*" element={<TodayPage />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   )
 }
 

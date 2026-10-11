@@ -45,6 +45,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | App updates: check on resume + every 30 min, "Update" banner, never auto-reload ([ADR-011](decisions/ADR-011-app-updates.md)) | iPhone stayed on v0.5.0; a reload mid-capture would lose work | Auto-reload, browser default |
 | 2026-10-11 | Imbalance tests area; trunk rotation via phone scoliometer, referral at ≥ 7° ([ADR-010](decisions/ADR-010-trunk-rotation-test.md)) | Best-evidenced phone screen; no images | Back-photo classifiers (weak, no open weights) |
 | 2026-10-11 | Posture metrics computed on the fly from landmarks, tilt-corrected, confidence-gated, with referral rules and muscle focus ([ADR-009](decisions/ADR-009-posture-metrics.md)) | Deterministic, private, improves old scans | Storing findings, LLM review |
 | 2026-10-11 | InBody scan: on-device OCR (Tesseract.js, self-hosted) + mandatory review; values only stored ([ADR-008](decisions/ADR-008-inbody-scan.md)) | User's choice; private, offline, free | Manual only, vision AI via backend |
@@ -55,6 +56,13 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (app update fix, v0.10.0)
+- **Bug (user):** the iPhone still showed v0.5.0 although v0.6–v0.9 had deployed (GitHub Pages served v0.9.0). The installed app resumes instead of reloading, so it never checked for updates, and nothing switched it over.
+- **Fix (ADR-011):** update check on every return to the app and every 30 min; a "New version available · Update" banner; the new version waits for the tap.
+- **Verified:** E2E across two real builds 6/6 ✅ (A installed → B deployed → banner on return → A still running → tap → B; banner gone; no errors). Lint, tests, build ✅.
+- **Trunk test references** added to ADR-010 (Bunnell 1984; Hresko 2016 joint statement; Beauséjour 2022; Qiao 2014; a 2014 counterpoint). Corrected my earlier overstatement of the 2022 result. Open question: start the re-test band at 4° (Bunnell) instead of 5°.
+- **One-time step for phones on ≤ v0.9:** close the app from the app switcher and reopen it, twice.
 
 ### 2026-10-11 (imbalance tests + trunk rotation, v0.9.0)
 - **Research** (user request: reuse open-source biomechanics scanners): no drop-in project. SMPL/SHAPY-family are non-commercial and heavy; scoliosis photo models have no weights or licence and reach only about 75% clinical accuracy; DigitalScale estimates BMI only; no open data on scapular winging. Worth using: phone scoliometer (well supported), Navy tape formula, free-exercise-db (public domain), our own cited finding → muscle table, MediaPipe segmentation (experimental).
