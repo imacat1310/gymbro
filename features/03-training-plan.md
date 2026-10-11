@@ -82,6 +82,9 @@ Estimate time = Σ(sets × (set duration + rest)) + warm-up + transitions. If it
 - No more than two consecutive days of heavy spinal loading
 - Beginner RPE cap
 
+### 8a. Body data (plan builder v2, [ADR-014](../decisions/ADR-014-plan-builder-v2-body-data.md))
+The latest posture scan, trunk test and InBody result feed the plan: a safety pause on spinal loading after an unacknowledged referral; a ~8-min corrective block from confident findings; muscles to strengthen as extra accessories; "start with your weaker side, +1 set" from a ≥ 5% InBody lean-mass gap. Every addition names its finding, and the plan offers a rebuild when newer body data exists.
+
 ### 8b. Plan library and hand edits ([ADR-007](../decisions/ADR-007-plan-library-and-editing.md))
 - Users keep several named plans (each with its own gym, schedule and priority muscles) and switch the active one. Injuries are global.
 - Plans can be built by the rules engine or started empty, then edited by hand: exercises (add, remove, reorder, sets/reps/rest) and days (add, remove, rename, reorder).

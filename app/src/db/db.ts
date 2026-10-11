@@ -32,6 +32,8 @@ export interface Settings {
   activePlanId?: string
   /** Used to convert posture-scan pixels to cm. */
   heightCm?: number
+  /** Referrals the user acknowledged (posture scan / assessment id → when): lifts the safety pause (ADR-014). */
+  referralAck?: Record<string, number>
 }
 
 export interface StoredPlan extends Plan {
@@ -46,6 +48,10 @@ export interface StoredPlan extends Plan {
   priorities: Muscle[]
   /** Changed by hand since it was last built: turns on the volume/balance/time checks. */
   edited?: boolean
+  /** Newest body data (scan, test, InBody) the plan was built with; newer data → offer a rebuild. */
+  bodyDataAt?: number
+  /** Built while a safety pause was active: rebuild once it's lifted. */
+  pausedSpinal?: boolean
 }
 
 /** One exercise slot inside a session. */

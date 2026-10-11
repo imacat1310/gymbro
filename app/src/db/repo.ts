@@ -1,5 +1,7 @@
 // Data access helpers. Components read through useLiveQuery and write through these functions.
 import { EXERCISE_BY_ID, type Muscle } from '../data/exercises'
+import type { Area } from '../data/stress'
+import { bodyPlanInput, type BodyData } from '../lib/bodyInput'
 import { addDay } from '../lib/planEdit'
 import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
@@ -57,8 +59,11 @@ export async function startSession(fromPlan?: { plan: StoredPlan; dayIndex: numb
   if (fromPlan) {
     const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
     const day = fromPlan.plan.days[fromPlan.dayIndex]
+    // Safety net: a referral after the plan was built still pauses heavy spinal loading in today's workout.
+    const pause = (await getBodyPlanInput())?.pause
+    const limitations: Area[] = [...(s.limitations ?? []), ...(pause ? ['lower_back' as const] : [])]
     entries = day.items.flatMap((item) => {
-      const exerciseId = gym ? substituteForGym(item, gym.equipment, s.limitations ?? []) : item.exerciseId
+      const exerciseId = gym ? substituteForGym(item, gym.equipment, limitations) : item.exerciseId
       return exerciseId ? [{ key: uid(), exerciseId, target: item.target }] : []
     })
   }
@@ -81,6 +86,26 @@ export async function nextPlanDayIndex(plan: StoredPlan): Promise<number> {
   return last ? (last.dayIndex! + 1) % plan.days.length : 0
 }
 
+/** Latest posture scan, trunk test and InBody result, plus referral acknowledgements. */
+export async function getBodyData(): Promise<BodyData> {
+  const [scan, trunk, comp, s] = await Promise.all([
+    db.postureScans.orderBy('takenAt').last(),
+    db.assessments.where('type').equals('trunk_rotation').sortBy('takenAt').then((a) => a.at(-1)),
+    db.bodyComps.orderBy('measuredAt').last(),
+    getSettings(),
+  ])
+  return { scan, trunk, comp, acks: s.referralAck }
+}
+
+export const getBodyPlanInput = async () => bodyPlanInput(await getBodyData())
+
+/** The user read the referral card and chose to include the paused exercises again. */
+export async function acknowledgeReferrals(ids: string[]) {
+  const s = await getSettings()
+  const now = Date.now()
+  await saveSettings({ referralAck: { ...s.referralAck, ...Object.fromEntries(ids.map((id) => [id, now])) } })
+}
+
 export interface PlanPrefs {
   name: string
   schedule: Schedule
@@ -94,6 +119,7 @@ export interface PlanPrefs {
 export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Promise<StoredPlan> {
   const s = await getSettings()
   const gym = s.activeGymId ? await db.gyms.get(s.activeGymId) : undefined
+  const body = await getBodyPlanInput()
   const plan: Plan = buildPlan({
     profile: s.profile,
     daysPerWeek: prefs.schedule.daysPerWeek,
@@ -101,6 +127,7 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     equipment: gym?.equipment ?? [],
     limitations: s.limitations ?? [],
     priorities: prefs.priorities,
+    body,
   })
   const old = replaceId ? await db.plans.get(replaceId) : undefined
   const now = Date.now()
@@ -113,6 +140,8 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     gymId: gym?.id,
     schedule: prefs.schedule,
     priorities: prefs.priorities,
+    bodyDataAt: body?.latestAt,
+    pausedSpinal: !!body?.pause,
   }
   await db.transaction('rw', db.plans, db.settings, async () => {
     await db.plans.put(stored)

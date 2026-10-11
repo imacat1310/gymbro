@@ -18,7 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Design pass (Design.md): sci-fi HUD theme (v0.14.0) + Profile tab done; next is Today (level, activity goal, badges)
+- Plan builder v2 (v0.15.0): body data → plan, with the safety pause. Try it: Plan → "Rebuild with my body data"
+- Next: Design pass → Today (level, activity goal, badges)
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -31,8 +32,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 - A photo of a real InBody sheet (cover name/ID) to test OCR accuracy
 
 **Known gaps**
-- Body data doesn't feed the plan yet (posture findings, InBody, trunk test): that's "Plan builder v2" on the roadmap.
-- SAFETY_PRIVACY.md says a referral pauses related heavy exercises until acknowledged; not implemented yet (needed before plan builder v2 uses findings).
+- InBody trends don't adjust weekly volume yet; movement tests (left vs right under load) don't exist yet.
 
 **Blocked**
 -
@@ -49,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Plan builder v2: body data → pause, correctives, strengthen, weaker side; rebuild prompts ([ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)) | User asked how the body report relates to the plan; it didn't | Live changes to existing plans |
 | 2026-10-11 | Sci-fi HUD theme replaces Bonfire ([ADR-013](decisions/ADR-013-scifi-hud-theme.md)) | User asked for futuristic; chose HUD from three mockups | Cyberpunk neon, sleek glass |
 | 2026-10-11 | Bonfire theme (souls + pixel, dark only), self-hosted OFL fonts, Profile tab replaces More ([ADR-012](decisions/ADR-012-bonfire-theme.md)) | User's choice from three mockups | Pure Souls, full pixel |
 | 2026-10-11 | Design.md scope: level = character level + weekly activity goal; gym AI scan deferred | User's choices | Activity rings only, AI scan now |
@@ -64,6 +65,16 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (plan builder v2, v0.15.0)
+- **Body data now drives the plan** (ADR-014):
+  - safety pause on lower-back loading after an unacknowledged referral, in new plans and at workout start
+  - corrective block (~8 min per session, rotating options, 2 easy sets, never trimmed or topped up, not counted as hard sets)
+  - top-2 muscles to strengthen as protected accessories
+  - InBody ≥ 5% lean-mass gap → "start with your weaker side, +1 set"
+  - notes and reasons name each source; "Rebuild with my body data" when newer data exists or the pause is lifted
+- Also fixed: the volume balancer could top up correctives, and stretches counted as chest volume.
+- **Verified:** 189 unit tests ✅ (14 new); lint ✅; build ✅; E2E 14/14 ✅ (plan before body data → 8.2° trunk test → old plan's workout swaps the deadlift → pause card + rebuild prompt → rebuilt plan has no lower-back loading, correctives with reasons, symmetric core work, notes → acknowledge → squats/deadlifts back → new InBody → prompt → weaker left leg named; no console errors).
 
 ### 2026-10-11 (sci-fi HUD theme, v0.14.0)
 - User asked for a futuristic theme instead of the souls theme; chose "Sci-fi HUD" from three mockups (ADR-013).

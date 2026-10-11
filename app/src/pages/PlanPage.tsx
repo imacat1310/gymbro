@@ -7,7 +7,7 @@ import { PlanEditor } from '../components/PlanEditor'
 import type { Muscle } from '../data/exercises'
 import { db, type Schedule, type Settings, type StoredPlan } from '../db/db'
 import {
-  buildAndSavePlan, createEmptyPlan, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
+  acknowledgeReferrals, buildAndSavePlan, createEmptyPlan, getBodyPlanInput, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
   saveSettings, setActivePlan, startSession, swapPlanExercise,
 } from '../db/repo'
 import { checkPlan, type PlanWarning } from '../lib/planEdit'
@@ -27,6 +27,7 @@ export function PlanPage() {
   const plan = useLiveQuery(async () => (await getActivePlan()) ?? null, [settings?.activePlanId])
   const planGym = useLiveQuery(async () => (plan?.gymId ? (await db.gyms.get(plan.gymId)) ?? null : null), [plan?.gymId])
   const nextDay = useLiveQuery(async () => (plan ? nextPlanDayIndex(plan) : 0), [plan?.id, plan?.days.length])
+  const body = useLiveQuery(getBodyPlanInput, [])
   const [mode, setMode] = useState<Mode>('view')
   const [showPlans, setShowPlans] = useState(false)
 
@@ -48,6 +49,21 @@ export function PlanPage() {
     navigate('/workout')
   }
 
+  async function rebuild(p: StoredPlan) {
+    if (p.edited && !confirm('Rebuilding replaces the changes you made by hand. Continue? (Tip: duplicate the plan first to keep a copy.)')) return
+    await buildAndSavePlan({ name: p.name, schedule: p.schedule, priorities: p.priorities }, p.id)
+  }
+
+  async function acknowledge() {
+    if (!body?.pause) return
+    if (!confirm('Include squats, deadlifts, rows and overhead presses again? Do this once a professional has checked you, or if you choose to train them anyway. Stop if anything hurts.')) return
+    await acknowledgeReferrals(body.pause.sources.map((x) => x.id))
+    if (current && !current.edited) await buildAndSavePlan({ name: current.name, schedule: current.schedule, priorities: current.priorities }, current.id)
+  }
+
+  const stale = !!(current && body && (current.bodyDataAt ?? 0) < body.latestAt)
+  const pauseLifted = !!(current?.pausedSpinal && !body?.pause)
+
   async function remove(p: StoredPlan) {
     if (confirm(`Delete "${p.name}"? Workouts you already logged are kept.`)) await deletePlan(p.id)
   }
@@ -63,6 +79,34 @@ export function PlanPage() {
           <button className="secondary" onClick={() => setShowPlans(true)}>Plans{plans.length > 1 ? ` (${plans.length})` : ''}</button>
         )}
       </header>
+
+      {body?.pause && mode !== 'edit' && (
+        <section className="card referral stack" role="alert">
+          <h2>Heavy spinal loading paused</h2>
+          <p className="small">
+            Because {body.pause.reason}, exercises that load the lower back (squats, deadlifts, rows, overhead presses…) are left out
+            of new plans and swapped for safer ones when you start a workout. A physiotherapist or doctor can tell you whether they're fine for you.
+          </p>
+          <div className="row">
+            {body.pause.sources.map((x) => (
+              <Link key={x.id} className="button secondary" to={x.kind === 'posture' ? `/profile/posture/${x.id}` : `/profile/imbalance?result=${x.id}`}>
+                {x.kind === 'posture' ? 'Posture report' : 'Trunk test'}
+              </Link>
+            ))}
+          </div>
+          <button className="ghost small" onClick={() => void acknowledge()}>I've had it checked: include them again</button>
+        </section>
+      )}
+
+      {current && mode === 'view' && (stale || pauseLifted) && (
+        <section className="card-callout stack small">
+          <span>
+            {pauseLifted ? 'The safety pause is lifted. ' : `New body data since this plan was built (${body!.sources.join(', ')}). `}
+            Rebuild to {pauseLifted ? 'include those exercises again' : 'update your corrective work'}.
+          </span>
+          <button onClick={() => void rebuild(current)}>Rebuild with my body data</button>
+        </section>
+      )}
 
       {(!current || mode === 'new') && (
         <NewPlan settings={settings} hasGym={!!gym} gymName={gym?.name} canCancel={!!plan}

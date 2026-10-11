@@ -9,6 +9,7 @@ GymBro is a **fitness and wellness** app, **not a medical device**. Every postur
   - User-reported pain ≥ 4/10, numbness, tingling, or pain that worsens with training
   - Post-surgery or pregnancy flags
   - Trunk rotation of 7° or more in the forward-bend test (5–6.9°: suggest a re-test) ([ADR-010](decisions/ADR-010-trunk-rotation-test.md))
+- **Implemented (v0.15.0, [ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)):** posture and trunk-test referrals pause lower-back-loading exercises in new plans *and* at workout start, until the user acknowledges on the Plan tab.
 - PAR-Q+ style readiness questionnaire at onboarding.
 - The terms of service state that this is not medical advice and that users train at their own risk.
 

@@ -1,7 +1,8 @@
-// Plan builder v1 (features/03-training-plan.md). Deterministic rules engine: same input → same plan.
-// Text rationale is template-based for now; an LLM explanation layer can replace `reason` later.
+// Plan builder (features/03-training-plan.md; v2 adds body data, ADR-014). Deterministic rules engine: same input →
+// same plan. Text rationale is template-based; an LLM explanation layer can replace `reason` later.
 import { EXERCISE_BY_ID, EXERCISES, PATTERN_LABELS, performableExercises, type Exercise, type Muscle, type Pattern } from '../data/exercises'
 import { isContraindicated, type Area } from '../data/stress'
+import type { BodyPlanInput } from './bodyInput'
 import { defaultTarget, type Experience, type Intensity, type Profile, type Target } from './targets'
 
 export type Role = 'main' | 'secondary' | 'accessory'
@@ -14,6 +15,8 @@ export interface PlanInput {
   limitations: Area[]
   priorities: Muscle[]
   exclude?: string[]
+  /** Body data (posture scan, trunk test, InBody) turned into plan input; see lib/bodyInput.ts. */
+  body?: BodyPlanInput
 }
 
 export interface PlanItem {
@@ -24,6 +27,8 @@ export interface PlanItem {
   alternatives: string[]
   /** Never dropped when trimming to fit the session length (pull work, push/pull balancer). */
   keep?: boolean
+  /** Light corrective from body data (ADR-014): fixed at 2 easy sets, never given volume top-ups. */
+  corrective?: boolean
 }
 
 export interface PlanDay {
@@ -236,11 +241,12 @@ function fitDuration(items: PlanItem[], minutes: number, priorities: Muscle[]): 
   return { items: out, trimmed }
 }
 
+/** Weekly hard sets per muscle. Mobility/posture correctives and stretches aren't hard sets, so they don't count. */
 export function weeklySets(days: PlanDay[]): Partial<Record<Muscle, number>> {
   const out: Partial<Record<Muscle, number>> = {}
   for (const d of days) for (const i of d.items) {
     const ex = EXERCISE_BY_ID.get(i.exerciseId)
-    if (!ex) continue
+    if (!ex || ex.pattern === 'corrective') continue
     for (const m of ex.primary) out[m] = (out[m] ?? 0) + i.target.sets
     for (const m of ex.secondary) out[m] = (out[m] ?? 0) + i.target.sets * 0.5
   }
@@ -266,6 +272,7 @@ export function groupSets(days: PlanDay[], muscles: Muscle[]): number {
   let n = 0
   for (const d of days) for (const i of d.items) {
     const ex = EXERCISE_BY_ID.get(i.exerciseId)!
+    if (ex.pattern === 'corrective') continue
     if (ex.primary.some((m) => muscles.includes(m))) n += i.target.sets
     else if (ex.secondary.some((m) => muscles.includes(m))) n += i.target.sets * 0.5
   }
@@ -326,7 +333,7 @@ function balanceVolume(days: PlanDay[], input: PlanInput) {
   for (const { muscles, target } of volumeGroups(input, days)) {
     while (groupSets(days, muscles) < target) {
       const options = days.flatMap((d) => d.items
-        .filter((i) => EXERCISE_BY_ID.get(i.exerciseId)!.primary.some((m) => muscles.includes(m)) && i.target.sets < MAX_SETS_PER_EXERCISE)
+        .filter((i) => !i.corrective && EXERCISE_BY_ID.get(i.exerciseId)!.pattern !== 'corrective' && EXERCISE_BY_ID.get(i.exerciseId)!.primary.some((m) => muscles.includes(m)) && i.target.sets < MAX_SETS_PER_EXERCISE)
         .filter((i) => estimateMinutes(d.items.map((x) => (x === i ? { ...x, target: { ...x.target, sets: x.target.sets + 1 } } : x))) <= input.sessionMinutes)
         .map((i) => ({ d, i })))
         .sort((a, b) => a.i.target.sets - b.i.target.sets || ROLE_ORDER[a.i.role] - ROLE_ORDER[b.i.role])
@@ -364,7 +371,18 @@ export const PULL: Pattern[] = ['h_pull', 'v_pull']
 export const PULL_BALANCERS = ['face_pull', 'band_pull_apart', 'db_rear_delt_fly', 'reverse_pec_deck', 'inverted_row']
 const patternOf = (i: PlanItem) => EXERCISE_BY_ID.get(i.exerciseId)!.pattern
 
+const LEG_MUSCLES: Muscle[] = ['quads', 'hamstrings', 'glutes', 'glute_med', 'adductors', 'calves']
+
+/** Correctives are light: 2 easy sets, short rest (~4 min each). */
+function correctiveTarget(ex: Exercise): Target {
+  return ex.measure === 'time'
+    ? { sets: 2, repMin: 30, repMax: 45, targetRpe: 6, restSec: 30 }
+    : { sets: 2, repMin: 10, repMax: 15, targetRpe: 7, restSec: 45 }
+}
+
 export function buildPlan(input: PlanInput): Plan {
+  // An unacknowledged referral pauses heavy spinal loading, exactly like a lower-back limitation (SAFETY_PRIVACY.md).
+  if (input.body?.pause && !input.limitations.includes('lower_back')) input = { ...input, limitations: [...input.limitations, 'lower_back'] }
   const exclude = new Set(input.exclude ?? [])
   const pool = performableExercises(input.equipment)
     .filter((e) => e.pattern !== 'corrective' && !exclude.has(e.id) && !isContraindicated(e.id, input.limitations))
@@ -377,12 +395,18 @@ export function buildPlan(input: PlanInput): Plan {
   // 1. Fill every slot.
   const drafts = split.templates.map((tpl) => {
     const slots = [...tpl.slots]
-    // Weak points: one extra accessory per priority muscle on days that train its region.
-    for (const m of priorities) {
+    // Weak points: one extra accessory per priority muscle on days that train its region. Your own priorities
+    // first, then muscles your body data says to strengthen.
+    const weak = [
+      ...priorities.map((m) => ({ muscle: m, reason: `Priority: ${muscleLabel(m)}` })),
+      ...(input.body?.strengthen ?? []).filter((b) => !priorities.includes(b.muscle))
+        .map((b) => ({ muscle: b.muscle, reason: `Strengthens ${muscleLabel(b.muscle)}. ${b.reason}` })),
+    ]
+    for (const { muscle: m, reason } of weak) {
       const region = UPPER_MUSCLES.includes(m) ? 'upper' : LOWER_MUSCLES.includes(m) ? 'lower' : 'full'
       if (tpl.region !== 'full' && region !== 'full' && region !== tpl.region) continue
       const patterns = [...new Set(pool.filter((e) => e.primary.includes(m)).map((e) => e.pattern))]
-      if (patterns.length) slots.push({ patterns, role: 'accessory', prefer: [m], reason: `Priority: ${muscleLabel(m)}` })
+      if (patterns.length) slots.push({ patterns, role: 'accessory', prefer: [m], reason })
     }
 
     const items: PlanItem[] = []
@@ -423,9 +447,30 @@ export function buildPlan(input: PlanInput): Plan {
     }
   }
 
+  // 2b. Corrective block from body data: about two light correctives per session, rotating through the needs so each
+  //     appears every week. Kept when trimming for time (spec: ~8 min per session).
+  const needs = (input.body?.correctives ?? []).map((n) => {
+    const can = new Set(performableExercises(input.equipment).filter((e) => !isContraindicated(e.id, input.limitations)).map((e) => e.id))
+    return { ...n, ids: n.options.filter((id) => can.has(id)) }
+  }).filter((n) => n.ids.length)
+  // Interleave the needs' options (A1 B1 A2 B2 A3 …) so the week covers every need and varies the exercises.
+  const rotation: { id: string; need: (typeof needs)[number] }[] = []
+  for (let r = 0; r < Math.max(0, ...needs.map((n) => n.ids.length)); r++) for (const n of needs) if (n.ids[r]) rotation.push({ id: n.ids[r], need: n })
+  const perDay = Math.min(2, rotation.length)
+  drafts.forEach((d, i) => {
+    for (let k = 0; k < perDay; k++) {
+      const { id, need } = rotation[(i * perDay + k) % rotation.length]
+      if (d.items.some((it) => it.exerciseId === id)) continue
+      d.items.push({
+        exerciseId: id, role: 'accessory', target: correctiveTarget(EXERCISE_BY_ID.get(id)!),
+        reason: need.reason, alternatives: need.ids.filter((x) => x !== id).slice(0, 3), keep: true, corrective: true,
+      })
+    }
+  })
+
   // 3. Fit each day into the session length.
   const days: PlanDay[] = drafts.map(({ tpl, items }) => {
-    const fitted = fitDuration(items, input.sessionMinutes, priorities)
+    const fitted = fitDuration(items, input.sessionMinutes, [...priorities, ...(input.body?.strengthen ?? []).map((b) => b.muscle)])
     if (fitted.trimmed) notes.push(`${tpl.name}: dropped ${fitted.trimmed} exercise${fitted.trimmed > 1 ? 's' : ''} to fit ${input.sessionMinutes} min.`)
     return { name: tpl.name, items: fitted.items, estMinutes: estimateMinutes(fitted.items) }
   })
@@ -458,6 +503,28 @@ export function buildPlan(input: PlanInput): Plan {
 
   notes.push(...volumeShortfalls(days, input))
 
+  // Weaker side (InBody segmental lean mass): one-sided exercises start with it and get an extra set on it.
+  const weakSide = input.body?.weakSide ?? {}
+  const weakUsed = new Set<string>()
+  for (const d of days) for (const it of d.items) {
+    const ex = EXERCISE_BY_ID.get(it.exerciseId)
+    if (!ex?.unilateral) continue
+    const limb = ex.primary.some((m) => LEG_MUSCLES.includes(m)) ? 'leg' : 'arm'
+    const w = weakSide[limb]
+    if (!w) continue
+    it.reason += `. Start with your ${w.side} ${limb} and add 1 set on it (InBody: ${w.diffPct}% less lean mass)`
+    weakUsed.add(limb)
+  }
+  for (const limb of ['arm', 'leg'] as const) {
+    const w = weakSide[limb]
+    if (w && !weakUsed.has(limb)) notes.push(`Your ${w.side} ${limb} has ${w.diffPct}% less lean mass (InBody). Swap in a one-sided exercise and start with the ${w.side} side.`)
+  }
+  if (input.body) {
+    if (perDay) notes.unshift(`Corrective block (about ${perDay * 4} min per session) from your body data.`)
+    notes.unshift(`Built with your ${input.body.sources.join(', ')}.`)
+    if (input.body.pause) notes.unshift(`Heavy spinal loading is paused: ${input.body.pause.reason}. See the card at the top.`)
+  }
+
   if (input.limitations.length) {
     const excluded = EXERCISES.filter((e) => isContraindicated(e.id, input.limitations)).length
     notes.push(`${excluded} exercises left out because of your limitations. If pain worsens or lasts, see a physiotherapist.`)
@@ -466,10 +533,13 @@ export function buildPlan(input: PlanInput): Plan {
   return { splitName: split.name, days, weeklySets: weeklySets(days), notes }
 }
 
-/** Swap plan exercises that aren't possible at the current gym for the best possible alternative. */
+/**
+ * Swap plan exercises that aren't possible at the current gym, or that conflict with a limitation (including a safety
+ * pause added after the plan was built), for the best possible alternative.
+ */
 export function substituteForGym(item: PlanItem, equipment: string[], limitations: Area[]): string | null {
   const possible = new Set(performableExercises(equipment).map((e) => e.id))
-  if (possible.has(item.exerciseId)) return item.exerciseId
+  if (possible.has(item.exerciseId) && !isContraindicated(item.exerciseId, limitations)) return item.exerciseId
   const alt = item.alternatives.find((id) => possible.has(id) && !isContraindicated(id, limitations))
   if (alt) return alt
   const ex = EXERCISE_BY_ID.get(item.exerciseId)

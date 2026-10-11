@@ -46,7 +46,7 @@ User decisions: Bonfire + pixel theme, dark only; "active level" = character lev
 - [x] Imbalance tests area + trunk rotation test (forward bend, phone as scoliometer) ([ADR-010](decisions/ADR-010-trunk-rotation-test.md), [features/08](features/08-imbalance-tests.md))
 - [ ] Movement tests, left vs right: single-leg squat, then overhead squat and overhead reach
 - [ ] Imbalance engine: all findings → per-side tight/weak muscles → stretches + strengthening, weaker side first
-- [ ] Plan builder v2: corrective / weak-point blocks driven by findings
+- [x] Plan builder v2: corrective / weak-point blocks driven by findings, safety pause, rebuild on new data ([ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)). *Movement-test input follows once those tests exist.*
 - [ ] Re-scan comparison view
 - **Milestone:** public beta
 
