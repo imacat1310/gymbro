@@ -28,9 +28,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Pose runtime + models are large: cache on first use instead of at install.
-        globIgnores: ['mediapipe/**', 'models/**'],
+        // Pose and OCR runtimes + models are large: cache on first use instead of at install.
+        globIgnores: ['mediapipe/**', 'models/**', 'ocr/**'],
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => /\/ocr\//.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ocr-assets',
+              expiration: { maxEntries: 10 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: ({ url }) => /\/(mediapipe\/wasm|models)\//.test(url.pathname),
             handler: 'CacheFirst',

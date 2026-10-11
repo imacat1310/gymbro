@@ -31,8 +31,9 @@ export function MorePage() {
 
       <section className="card stack">
         <h2>Body</h2>
-        <p className="muted small">Guided photos of your posture. Photos stay on this phone and aren't saved.</p>
-        <Link to="/more/posture" className="button">Posture scan (beta)</Link>
+        <p className="muted small">Body composition and posture. Everything stays on this phone; photos aren't saved.</p>
+        <Link to="/more/body" className="button">Body composition (InBody)</Link>
+        <Link to="/more/posture" className="button secondary">Posture scan (beta)</Link>
       </section>
 
       <section className="card stack">

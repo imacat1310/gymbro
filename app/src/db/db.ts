@@ -4,6 +4,7 @@ import type { Landmark } from '@mediapipe/tasks-vision'
 import type { Muscle } from '../data/exercises'
 import type { Area } from '../data/stress'
 import type { PostureView, Tilt } from '../lib/capture'
+import type { InBodyField, InBodyValues } from '../lib/inbody'
 import type { Plan } from '../lib/planner'
 import type { Profile, Target } from '../lib/targets'
 
@@ -109,6 +110,17 @@ export interface PostureScan {
   appVersion: string
 }
 
+/** One body-composition measurement (InBody sheet or typed in). The sheet photo is never stored (ADR-008). */
+export interface BodyComp {
+  id: string
+  measuredAt: number
+  values: InBodyValues
+  source: 'scan' | 'manual'
+  /** Scan only: values read from the photo (the rest were typed or corrected by the user). */
+  scanned?: InBodyField[]
+  createdAt: number
+}
+
 export const db = new Dexie('gymbro') as Dexie & {
   gyms: EntityTable<Gym, 'id'>
   settings: EntityTable<Settings, 'id'>
@@ -116,6 +128,7 @@ export const db = new Dexie('gymbro') as Dexie & {
   sets: EntityTable<SetLog, 'id'>
   plans: EntityTable<StoredPlan, 'id'>
   postureScans: EntityTable<PostureScan, 'id'>
+  bodyComps: EntityTable<BodyComp, 'id'>
 }
 
 db.version(1).stores({
@@ -147,5 +160,6 @@ db.version(4).stores({}).upgrade(async (tx) => {
     })
   }
 })
+db.version(5).stores({ bodyComps: 'id, measuredAt' })
 
 export const uid = () => crypto.randomUUID()

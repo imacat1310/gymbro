@@ -68,6 +68,7 @@ gym (id, user_id, name, is_default)
 gym_equipment (gym_id, equipment_id, attributes jsonb, source text, confidence real)
   -- source: scan | manual | preset
 
+body_comp (id, user_id, measured_at, values jsonb, source text)  -- phone today: IndexedDB `bodyComps` (DB v5, ADR-008): { id, measuredAt, values: { weightKg, smmKg, bodyFatKg, pbf, bmi, visceralFat, bmrKcal, score, tbwL, ecwTbw, lean* }, source: scan|manual, scanned[], createdAt }
 posture_scan (id, user_id, taken_at, views jsonb, landmarks jsonb, media_retained bool)
 -- On the phone today (IndexedDB `postureScans`, ADR-006): { id, takenAt, heightCm, camera, appVersion,
 --   views: { front|side|back: { landmarks[33], worldLandmarks[33], width, height, tilt, frames, spread, nearSide? } } }. No images.

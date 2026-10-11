@@ -4,7 +4,7 @@ import { addDay } from '../lib/planEdit'
 import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
-import { db, uid, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
+import { db, uid, type BodyComp, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
 
 export const DEFAULT_PROFILE: Profile = { goal: 'hypertrophy', experience: 'beginner', intensity: 'moderate' }
 
@@ -275,14 +275,14 @@ export async function exerciseHistory(exerciseId: string, excludeSessionId?: str
 export const toLogged = (s: SetLog): LoggedSet => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe })
 
 export async function exportAll() {
-  const [gyms, settings, sessions, sets, plans, postureScans] = await Promise.all([
-    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(),
+  const [gyms, settings, sessions, sets, plans, postureScans, bodyComps] = await Promise.all([
+    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(), db.bodyComps.toArray(),
   ])
-  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 3, gyms, settings, sessions, sets, plans, postureScans }
+  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 5, gyms, settings, sessions, sets, plans, postureScans, bodyComps }
 }
 
 export async function resetAll() {
-  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear()])
+  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear(), db.bodyComps.clear()])
 }
 
 export async function savePostureScan(scan: Omit<PostureScan, 'id' | 'appVersion'>) {
@@ -292,5 +292,13 @@ export async function savePostureScan(scan: Omit<PostureScan, 'id' | 'appVersion
 }
 
 export const deletePostureScan = (id: string) => db.postureScans.delete(id)
+
+export async function saveBodyComp(entry: Omit<BodyComp, 'id' | 'createdAt'>) {
+  const id = uid()
+  await db.bodyComps.add({ ...entry, id, createdAt: Date.now() })
+  return id
+}
+
+export const deleteBodyComp = (id: string) => db.bodyComps.delete(id)
 
 export type { SetKind }

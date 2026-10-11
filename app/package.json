@@ -1,15 +1,15 @@
 {
   "name": "gymbro",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "predev": "node scripts/copy-mediapipe-wasm.mjs",
-    "prebuild": "node scripts/copy-mediapipe-wasm.mjs",
+    "predev": "node scripts/copy-mediapipe-wasm.mjs && node scripts/copy-ocr-assets.mjs",
+    "prebuild": "node scripts/copy-mediapipe-wasm.mjs && node scripts/copy-ocr-assets.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -18,9 +18,11 @@
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router": "^8.4.0"
+    "react-router": "^8.4.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

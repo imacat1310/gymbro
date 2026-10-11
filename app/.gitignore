@@ -25,3 +25,6 @@ dist-ssr
 
 # Copied from node_modules by scripts/copy-mediapipe-wasm.mjs
 public/mediapipe
+
+# Copied from node_modules by scripts/copy-ocr-assets.mjs
+public/ocr

@@ -3,6 +3,7 @@ import { BottomNav } from './components/BottomNav'
 import { DeviceCheck } from './components/DeviceCheck'
 import { PoseTest } from './components/PoseTest'
 import { formatDuration, useActiveSession, useNow } from './lib/hooks'
+import { BodyPage } from './pages/BodyPage'
 import { ExercisePage } from './pages/ExercisePage'
 import { GymPage } from './pages/GymPage'
 import { HistoryPage } from './pages/HistoryPage'
@@ -70,6 +71,7 @@ function App() {
         <Route path="more" element={<MorePage />} />
         <Route path="more/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
         <Route path="more/posture" element={<PosturePage />} />
+        <Route path="more/body" element={<BodyPage />} />
         <Route path="more/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />
         <Route path="*" element={<TodayPage />} />
       </Route>

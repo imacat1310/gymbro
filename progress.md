@@ -9,7 +9,7 @@ Track what's done, what's in progress, and decisions made during production. New
 | 0: Foundations | 🟨 In progress | Live on GitHub Pages, iPhone checked; pose spike ✅ GO on iPhone; Supabase deferred |
 | 1: Track it | 🟨 Nearly done | Tracker, progression, history, gyms shipped in v0.3.0; sync needs backend |
 | 2: Plan it | 🟨 In progress | Plan builder (v0.4.0), plan library + editing (v0.6.0); equipment scan waits on AI provider |
-| 3: See you | 🟨 In progress | Guided posture capture shipped (v0.5.0); metrics/findings next |
+| 3: See you | 🟨 In progress | Posture capture (v0.5.0), InBody body composition (v0.7.0); posture metrics next |
 | 4: Coach you | ⬜ Not started | |
 | 5: Beyond v1 | ⬜ Not started | |
 
@@ -18,17 +18,17 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Try on iPhone: v0.5.0 posture capture (More → Posture scan) and v0.6.0 plans (Plan → Plans / Manage plan)
+- Try on iPhone: posture capture (v0.5.0), plans (v0.6.0), InBody scan (v0.7.0: More → Body composition)
 
 **Next**
-- InBody sheet scan (user request, ideas #12): waiting for your choice of approach
+- Tune the InBody parser on a real sheet photo (personal details covered)
 - Phase 3: posture metrics + findings from stored scans
 
 **Waiting on you**
 - Android device check (if you have one)
 - Decision: backend for sync + rest push notifications (Supabase account?)
 - Decision: vision AI provider + API key for the equipment scan (Phase 2)
-- Decision: how to read InBody sheets (on-device OCR vs vision AI vs manual entry)
+- A photo of a real InBody sheet (cover name/ID) to test OCR accuracy
 
 **Blocked**
 -
@@ -45,6 +45,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-11 | InBody scan: on-device OCR (Tesseract.js, self-hosted) + mandatory review; values only stored ([ADR-008](decisions/ADR-008-inbody-scan.md)) | User's choice; private, offline, free | Manual only, vision AI via backend |
 | 2026-10-11 | Plan library + hand editing; rule breaks warn, never block ([ADR-007](decisions/ADR-007-plan-library-and-editing.md)) | User's choice; covers "change" and "different plans" | Library only, edit one plan, block injury conflicts |
 | 2026-10-11 | Posture capture: front camera default, auto-capture, Full-model 5-frame median, landmarks only ([ADR-006](decisions/ADR-006-posture-capture.md)) | Works alone, steadier landmarks, no photos stored | Manual tap, self-timer, single frame, keeping photos |
 | 2026-10-11 | Pose spike **GO** on iPhone (both models ~30 fps); Lite for live use, Full for stills and post-set analysis | Lite has frame-time headroom; Full is at the 33 ms budget but more accurate | Full everywhere, Heavy model |
@@ -52,6 +53,14 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-11 (InBody body composition, v0.7.0)
+- **User request:** scan InBody results into personal info. Options presented; the user chose on-device OCR with manual review (ADR-008).
+- **More → Body composition:** Scan InBody sheet (camera or library) → OCR on the phone → review form (15 values; tags "from photo" / "check" / empty) → Save; Enter manually; latest card with change since the previous entry; history with details and delete. DB v5 `bodyComps`, export v5.
+- **OCR:** Tesseract.js 7 self-hosted (`public/ocr`, copied at build, service-worker cached on first use, about 7 MB once; install precache unchanged). Photo preprocessing: upright, 2400 px, grayscale, contrast stretch.
+- **First E2E run found real OCR patterns:** dropped decimal points ("311kg"), garbled chart ticks that put BMI at 15, "ECWITBW". Fixed: inferred decimals are marked "check", lines with 5+ numbers are read backwards, slash look-alikes accepted. 10/15 with one wrong value → **15/15, none wrong**.
+- **Verified:** 104 unit tests ✅ (17 new for the parser); lint ✅; build ✅. E2E with a synthetic InBody-570-style sheet degraded like a phone photo (tilt, blur, dim, grey paper): OCR 2.3 s on this Mac, 15/15 correct, 2 flagged "check", date read, out-of-range edit blocks Save, saved entry has no image, manual entry + change since previous, **no third-party requests**, no console errors (11/11).
+- **Not verified:** real InBody sheets and real phone photos (glare, curl, other models and languages); OCR speed on iPhone.
 
 ### 2026-10-11 (plan library + editing, v0.6.0)
 - **User request:** change plans and keep several. Options were presented; the user chose a library with full editing, with rule breaks warned rather than blocked (ADR-007).

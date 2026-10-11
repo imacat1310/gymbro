@@ -20,6 +20,9 @@ GymBro is a **fitness and wellness** app, **not a medical device**. Every postur
 - Beginners: RPE cap of 8 in the first 4 weeks regardless of chosen intensity.
 - Form-check safety faults (e.g. lumbar flexion under load) → block load increases and show a prominent cue.
 
+## Body composition data
+InBody / body-composition values are health data. Sheet photos are read on the phone (self-hosted OCR, no uploads), held in memory only during review, and never stored. Values are stored locally only ([ADR-008](decisions/ADR-008-inbody-scan.md)).
+
 ## Body media privacy
 Posture photos and training videos are **highly sensitive** (partial undress, biometric data).
 
