@@ -57,7 +57,7 @@ describe('deriveSignals', () => {
 })
 
 describe('selectInsight: priority', () => {
-  const base: Signals = { stalled: [], deloadRecommended: false, sessionsThisWeek: 1, planDays: 3, lastRecords: [], newBodyData: false, bodySources: [], weeksOfHistory: 2, exercisesTracked: 4 }
+  const base: Signals = { stalled: [], deloadRecommended: false, sessionsThisWeek: 1, planDays: 3, lastRecords: [], newBodyData: false, bodySources: [], weeksOfHistory: 2, exercisesTracked: 4, goalsReached: [], goalsActive: 0, goalsDone: 0 }
   it('safety pause beats everything', () => {
     expect(selectInsight({ ...base, pause: 'x', deloadRecommended: true, stalled: ['a', 'b'] })!.kind).toBe('pause')
   })
@@ -68,6 +68,10 @@ describe('selectInsight: priority', () => {
     expect(selectInsight({ ...base, newBodyData: true, bodySources: ['InBody (1 Oct)'] })!.kind).toBe('rebuild')
     expect(selectInsight(base)!.kind).toBe('behind')
     expect(selectInsight({ ...base, sessionsThisWeek: 3 })!.kind).toBe('on_track')
+  })
+  it('a goal reached in the last days beats a stall, but not a deload', () => {
+    expect(selectInsight({ ...base, goalsReached: [{ title: 'Bench press: 100 kg', kind: 'lift' }], stalled: ['barbell_row'] })!).toMatchObject({ kind: 'goal', why: 'goal_lift' })
+    expect(selectInsight({ ...base, goalsReached: [{ title: 'Body fat: 15%', kind: 'body' }], deloadRecommended: true, stalled: ['a', 'b'] })!.kind).toBe('deload')
   })
   it('nothing to say without a plan or history', () => {
     expect(selectInsight({ ...base, planDays: null })).toBeNull()
@@ -80,6 +84,6 @@ describe('selectInsight: priority', () => {
   it('coach view lists the signals in plain lines', () => {
     const lines = coachView({ ...base, stalled: ['barbell_back_squat'] })
     expect(lines).toContain('Stalled: Barbell back squat')
-    expect(lines).toHaveLength(7)
+    expect(lines).toHaveLength(8)
   })
 })

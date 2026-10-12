@@ -61,6 +61,21 @@ export function StatusCard() {
       </ul>
       <Why codes={p.stats.map((s) => s.why)} label="How stats work" />
 
+      <Link to="/profile/goals" className="goal-strip">
+        <span className="muted small">Goals</span>
+        {p.goals.filter((g) => !g.status.achieved).length ? (
+          <ul>
+            {p.goals.filter((g) => !g.status.achieved).slice(0, 3).map((g) => (
+              <li key={g.goal.id}>
+                <span>{g.status.title}</span>
+                <span className="progress thin"><span style={{ width: `${Math.round((g.status.progress ?? 0) * 100)}%` }} /></span>
+              </li>
+            ))}
+          </ul>
+        ) : <span className="muted small">Set a lift or body goal</span>}
+        <span aria-hidden="true">›</span>
+      </Link>
+
       <Link to="/profile/badges" className="badge-strip">
         <span className="muted small">Badges {p.badges.filter((b) => b.unlocked).length} / {p.badges.length}</span>
         <span className="badge-icons">{recent.length ? recent.map((b) => <i key={b.id} title={b.title}>{b.icon}</i>) : <span className="muted small">Finish a workout to earn your first</span>}</span>

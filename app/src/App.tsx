@@ -22,6 +22,7 @@ const PoseTest = lazy(() => import('./components/PoseTest').then((m) => ({ defau
 const BodyPage = lazy(() => import('./pages/BodyPage').then((m) => ({ default: m.BodyPage })))
 const PosturePage = lazy(() => import('./pages/PosturePage').then((m) => ({ default: m.PosturePage })))
 const ImbalancePage = lazy(() => import('./pages/ImbalancePage').then((m) => ({ default: m.ImbalancePage })))
+const GoalsPage = lazy(() => import('./pages/GoalsPage').then((m) => ({ default: m.GoalsPage })))
 const BadgesPage = lazy(() => import('./pages/BadgesPage').then((m) => ({ default: m.BadgesPage })))
 const TrunkTestPage = lazy(() => import('./pages/TrunkTestPage').then((m) => ({ default: m.TrunkTestPage })))
 const PostureReportPage = lazy(() => import('./pages/PostureReportPage').then((m) => ({ default: m.PostureReportPage })))
@@ -93,6 +94,7 @@ function App() {
         <Route path="profile/posture/:id" element={<PostureReportPage />} />
         <Route path="profile/body" element={<BodyPage />} />
         <Route path="profile/badges" element={<BadgesPage />} />
+        <Route path="profile/goals" element={<GoalsPage />} />
         <Route path="profile/imbalance" element={<ImbalancePage />} />
         <Route path="profile/imbalance/trunk" element={<TrunkTestPage />} />
         <Route path="profile/pose" element={<Wrap title="Pose speed test"><PoseTest /></Wrap>} />

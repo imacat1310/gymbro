@@ -139,6 +139,23 @@ export interface Assessment {
   trunk: TrunkResult
 }
 
+/** A user-set target (ADR-018). Progress and achievement are derived from sets and InBody results. */
+export interface Goal {
+  id: string
+  kind: 'lift' | 'body'
+  /** Lift goals: the exercise and the weight × reps to reach. */
+  exerciseId?: string
+  targetKg?: number
+  targetReps?: number
+  /** Body goals: the InBody value to reach. */
+  metric?: 'weightKg' | 'pbf' | 'smmKg' | 'bodyFatKg'
+  target?: number
+  /** Value when the goal was set (best e1RM, or the latest InBody value), for progress and pace. */
+  start?: number
+  createdAt: number
+  deadline?: number
+}
+
 export const db = new Dexie('gymbro') as Dexie & {
   gyms: EntityTable<Gym, 'id'>
   settings: EntityTable<Settings, 'id'>
@@ -148,6 +165,7 @@ export const db = new Dexie('gymbro') as Dexie & {
   postureScans: EntityTable<PostureScan, 'id'>
   bodyComps: EntityTable<BodyComp, 'id'>
   assessments: EntityTable<Assessment, 'id'>
+  goals: EntityTable<Goal, 'id'>
 }
 
 db.version(1).stores({
@@ -181,5 +199,6 @@ db.version(4).stores({}).upgrade(async (tx) => {
 })
 db.version(5).stores({ bodyComps: 'id, measuredAt' })
 db.version(6).stores({ assessments: 'id, type, takenAt' })
+db.version(7).stores({ goals: 'id, kind, createdAt' })
 
 export const uid = () => crypto.randomUUID()

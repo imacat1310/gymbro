@@ -7,7 +7,7 @@ import { addDay } from '../lib/planEdit'
 import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
-import { db, uid, type Assessment, type BodyComp, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
+import { db, uid, type Assessment, type BodyComp, type Goal, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
 
 export const DEFAULT_PROFILE: Profile = { goal: 'hypertrophy', experience: 'beginner', intensity: 'moderate' }
 
@@ -325,14 +325,14 @@ export async function exerciseHistory(exerciseId: string, excludeSessionId?: str
 export const toLogged = (s: SetLog): LoggedSet => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe })
 
 export async function exportAll() {
-  const [gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments] = await Promise.all([
-    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(), db.bodyComps.toArray(), db.assessments.toArray(),
+  const [gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments, goals] = await Promise.all([
+    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(), db.bodyComps.toArray(), db.assessments.toArray(), db.goals.toArray(),
   ])
-  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 6, gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments }
+  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 7, gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments, goals }
 }
 
 export async function resetAll() {
-  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear(), db.bodyComps.clear(), db.assessments.clear()])
+  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear(), db.bodyComps.clear(), db.assessments.clear(), db.goals.clear()])
 }
 
 export async function savePostureScan(scan: Omit<PostureScan, 'id' | 'appVersion'>) {
@@ -358,5 +358,16 @@ export async function saveAssessment(a: Omit<Assessment, 'id'>) {
 }
 
 export const deleteAssessment = (id: string) => db.assessments.delete(id)
+
+/** Create a goal, recording today's starting value so progress and pace can be shown. */
+export async function addGoal(g: Omit<Goal, 'id' | 'createdAt' | 'start'>) {
+  const { startingValue } = await import('../lib/progress/goals')
+  const [sets, comps] = await Promise.all([g.kind === 'lift' ? db.sets.where('exerciseId').equals(g.exerciseId!).toArray() : [], db.bodyComps.toArray()])
+  const id = uid()
+  await db.goals.add({ ...g, id, createdAt: Date.now(), start: startingValue(g, sets, comps) })
+  return id
+}
+
+export const deleteGoal = (id: string) => db.goals.delete(id)
 
 export type { SetKind }

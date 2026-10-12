@@ -220,6 +220,21 @@ export const WHY = {
     rule: 'Starts at 99 and drops for confident posture findings (12 mild, 20 moderate, 30 marked), a trunk rotation in the re-test band (15) or above it (30), and 10 for each limb with a 5%+ InBody left/right gap. A screening score, not a diagnosis.',
     evidence: 'convention', sources: [S.janda, S.bunnell],
   },
+  goal_lift: {
+    title: 'Lift goals',
+    rule: 'A lift goal is converted to an estimated one-rep max, so any weight and rep combination counts: 95 kg × 3 (about 104.5 kg) meets "100 kg × 1". Progress runs from your best when you set the goal.',
+    evidence: 'moderate', sources: [S.epley],
+  },
+  goal_body: {
+    title: 'Body goals',
+    rule: 'Body goals are tracked against your InBody results, from the value when you set the goal to the target. Body composition changes slowly; weeks, not days.',
+    evidence: 'convention', sources: [],
+  },
+  goal_pace: {
+    title: 'Pace',
+    rule: 'Compares your progress with a straight line from the day you set the goal to its deadline. Within 10 percentage points of that line is on track.',
+    evidence: 'convention', sources: [],
+  },
   consistency: {
     title: 'Consistency',
     rule: 'Workouts done this week compared with the days your plan asks for. Showing up consistently matters more than any single session.',

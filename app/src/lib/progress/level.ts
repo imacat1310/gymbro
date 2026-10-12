@@ -37,6 +37,8 @@ export interface ProgressInput {
   hasInBody?: boolean
   /** Session ids that were sport or focus days. */
   focusSessionIds?: Set<string>
+  /** When each reached goal was reached. */
+  goalsAchievedAt?: number[]
   now: number
 }
 
@@ -152,6 +154,7 @@ export function computeProgress(input: ProgressInput): Progress {
       - (input.balance.trunk === 'refer' ? 30 : input.balance.trunk === 'borderline' ? 15 : 0) - 10 * input.balance.weakSides)
     if (balance >= 85) unlockAt('balanced', now)
   }
+  if (input.goalsAchievedAt?.length) unlockAt('goal_getter', Math.min(...input.goalsAchievedAt))
   if (input.hasPostureScan) unlockAt('body_scan', now)
   if (input.hasInBody) unlockAt('measured', now)
 
@@ -175,6 +178,7 @@ export function computeProgress(input: ProgressInput): Progress {
     { id: 'streak_12', title: 'Iron will', detail: 'Hit your weekly plan 12 weeks in a row', icon: '✦', progress: count(streak, 12) },
     { id: 'tonnes_10', title: '10 tonnes', detail: 'Lift 10,000 kg in total', icon: '■', progress: `${Math.round(Math.min(volume, 10_000) / 100) / 10} / 10 t` },
     { id: 'tonnes_100', title: '100 tonnes', detail: 'Lift 100,000 kg in total', icon: '▣', progress: `${Math.round(Math.min(volume, 100_000) / 1000)} / 100 t` },
+    { id: 'goal_getter', title: 'Goal getter', detail: 'Reach a goal you set', icon: '◉' },
     { id: 'athlete', title: 'Athlete', detail: 'Finish a sport or focus day', icon: '➶' },
     { id: 'body_scan', title: 'Self-aware', detail: 'Do a posture scan', icon: '◎' },
     { id: 'measured', title: 'Measured', detail: 'Log an InBody result', icon: '≋' },

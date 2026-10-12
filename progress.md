@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Today status (v0.18.0): level + XP, weekly rings, 5 stats, 15 badges (Profile → Badges)
-- Next: goals (lift and body targets), then History "goal reached?"; opt-in AI coach parked (ideas.md "Pending decision")
+- Goals (v0.19.0): Profile → Goals (lift and body targets, pace); shown on Today; "Goal reached" insight and badge
+- Next: History, plan finished → goal reached or not (InBody and scans); opt-in AI coach parked (ideas.md "Pending decision")
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -49,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Goals: lift (e1RM) and body (InBody) targets, derived progress and pace ([ADR-018](decisions/ADR-018-goals.md)) | Fits Design.md; feeds History's "goal reached" | Stored progress |
 | 2026-10-12 | Level/XP, rings, stats and badges derived from history, never stored ([ADR-017](decisions/ADR-017-level-stats-badges.md)) | Always consistent, re-tunable | Stored XP ledger |
 | 2026-10-12 | Opt-in AI coach parked by the user; full proposal saved in ideas.md | Costs money and sends data off the phone | Build now |
 | 2026-10-12 | Coach reasoning adapted from gymcoach (MIT): reason codes + sources, stall/deload signals, one Today insight, coach view; no AI ([ADR-016](decisions/ADR-016-coach-reasoning.md)) | User chose A and gymcoach as the model | LLM chat now (needs backend), on-device LLM |
@@ -69,6 +70,15 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (goals, v0.19.0)
+- **Built** (ADR-018):
+  - Goals page: lift or body goal with an optional deadline; progress start → now → target; pace chip; reached list
+  - goals on Today's Status panel
+  - "Goal reached" coach insight, "Goal getter" badge, goals in "What your coach sees", 3 new "Why?" entries
+  - DB v7 `goals`, in export and Delete all
+- **Fixed during testing:** a goal already met when set but exceeded later got the later date; the "goal reached" insight guessed lift vs body from the title (now passes the goal's kind).
+- **Verified:** 239 unit tests ✅ (15 new: e1RM targets, reps targets, both directions, dates, pace ahead / on track / behind / missed, insight priority); lint ✅; build ✅; E2E 8/8 ✅ (form → two goals with start values → pace label → bench 95×3 and InBody 14.8% → both reached → Today insight → Goal getter badge → coach view; no console errors).
 
 ### 2026-10-12 (Today: level, stats, rings, badges, v0.18.0)
 - The opt-in AI coach decision is saved in ideas.md ("Pending decision") at the user's request.

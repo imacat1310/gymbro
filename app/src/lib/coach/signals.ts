@@ -51,6 +51,10 @@ export interface Signals {
   bodySources: string[]
   weeksOfHistory: number
   exercisesTracked: number
+  /** Goals reached in the last 3 days, and counts for the coach view. */
+  goalsReached: { title: string; kind: 'lift' | 'body' }[]
+  goalsActive: number
+  goalsDone: number
 }
 
 export interface SignalInput {
@@ -58,10 +62,11 @@ export interface SignalInput {
   sets: SetLog[]
   plan?: StoredPlan | null
   body?: BodyPlanInput
+  goals?: { title: string; kind: 'lift' | 'body'; achieved: boolean; achievedAt?: number }[]
   now: number
 }
 
-export function deriveSignals({ sessions, sets, plan, body, now }: SignalInput): Signals {
+export function deriveSignals({ sessions, sets, plan, body, goals = [], now }: SignalInput): Signals {
   const finished = sessions.filter((s) => s.endedAt).sort((a, b) => a.startedAt - b.startedAt)
   const setsBySession = new Map<string, SetLog[]>()
   for (const s of sets) (setsBySession.get(s.sessionId) ?? setsBySession.set(s.sessionId, []).get(s.sessionId)!).push(s)
@@ -99,10 +104,13 @@ export function deriveSignals({ sessions, sets, plan, body, now }: SignalInput):
     bodySources: body?.sources ?? [],
     weeksOfHistory: new Set(finished.map((s) => weekStart(s.startedAt))).size,
     exercisesTracked: series.size,
+    goalsReached: goals.filter((g) => g.achievedAt && now - g.achievedAt < 3 * 86_400_000).map((g) => ({ title: g.title, kind: g.kind })),
+    goalsActive: goals.filter((g) => !g.achieved).length,
+    goalsDone: goals.filter((g) => g.achieved).length,
   }
 }
 
-export type InsightKind = 'pause' | 'deload' | 'stall' | 'record' | 'rebuild' | 'on_track' | 'behind'
+export type InsightKind = 'pause' | 'deload' | 'goal' | 'stall' | 'record' | 'rebuild' | 'on_track' | 'behind'
 
 export interface Insight {
   kind: InsightKind
@@ -117,7 +125,7 @@ const list = (ids: string[]) => ids.map(name).join(', ')
 
 /**
  * The single most important thing to tell the user today, or null with nothing to say (no history, no plan).
- * Priority: safety pause > deload > stalled lift > fresh record > new body data > consistency.
+ * Priority: safety pause > deload > goal reached > stalled lift > fresh record > new body data > consistency.
  */
 export function selectInsight(s: Signals): Insight | null {
   if (s.pause) {
@@ -125,6 +133,9 @@ export function selectInsight(s: Signals): Insight | null {
   }
   if (s.deloadRecommended) {
     return { kind: 'deload', title: 'Time for a lighter week', detail: `${s.stalled.length} lifts have stalled: ${list(s.stalled)}. A week at about 10% less load and fewer sets usually brings progress back.`, href: '/history', why: 'deload_week' }
+  }
+  if (s.goalsReached.length) {
+    return { kind: 'goal', title: 'Goal reached', detail: `${s.goalsReached.map((g) => g.title).join('; ')}. Set the next one while you're on a roll.`, href: '/profile/goals', why: s.goalsReached[0].kind === 'lift' ? 'goal_lift' : 'goal_body' }
   }
   if (s.stalled.length) {
     return { kind: 'stall', title: `${name(s.stalled[0])} has stalled`, detail: `No progress in ${STALL_LOOKBACK_SESSIONS} sessions. Check your sleep and effort, or swap it for a variation for a few weeks.`, href: `/exercise/${s.stalled[0]}`, why: 'stalled' }
@@ -153,6 +164,7 @@ export function coachView(s: Signals): string[] {
     s.deloadRecommended ? 'Deload week recommended' : 'No deload needed',
     s.lastRecords.length ? `Recent records: ${list(s.lastRecords.map((r) => r.exerciseId))}` : 'No records in the last few days',
     s.bodySources.length ? `Body data: ${s.bodySources.join(', ')}` : 'No body data yet',
+    s.goalsActive || s.goalsDone ? `Goals: ${s.goalsActive} active, ${s.goalsDone} reached` : 'No goals set',
     s.pause ? 'Safety pause active on lower-back loading' : 'No safety pause',
   ]
 }

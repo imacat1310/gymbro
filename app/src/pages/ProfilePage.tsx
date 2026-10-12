@@ -51,6 +51,11 @@ export function ProfilePage() {
         </Link>
       </section>
 
+      <Link to="/profile/goals" className="test-link card-link">
+        <b>Goals</b>
+        <span className="muted small">Lift and body targets, tracked against your training and InBody results.</span>
+      </Link>
+
       <Link to="/profile/badges" className="test-link card-link">
         <b>Badges</b>
         <span className="muted small">Milestones for workouts, records, streaks and body checks.</span>

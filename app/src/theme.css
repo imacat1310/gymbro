@@ -248,3 +248,18 @@ input::placeholder { color: #4b6478; }
 .badge-tile.on .badge-hex { color: var(--accent-hi); background: rgba(34, 211, 238, 0.2); text-shadow: 0 0 10px rgba(34, 211, 238, 0.7); }
 .badge-state { font-family: var(--font-data); color: var(--accent-hi); }
 .card-link { background: var(--card); }
+
+/* Goals (ADR-018) */
+.goal-nums { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-data); color: var(--muted); }
+.goal-nums .data { color: var(--accent-hi); }
+.goal.done { border-color: rgba(52, 211, 153, 0.4); }
+.goal-chip { color: var(--sev-ok); }
+.pace-ahead, .pace-on_track { color: var(--sev-ok); }
+.pace-behind { color: var(--sev-mild); }
+.pace-missed { color: var(--sev-marked); }
+.goal-strip { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--text); text-decoration: none; }
+.goal-strip > .muted { grid-column: 1 / -1; }
+.goal-strip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.85rem; }
+.goal-strip li { display: grid; gap: 3px; }
+.goal-strip .progress.thin { display: block; }
+.goal-strip .progress.thin > span { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 10px); }
