@@ -12,6 +12,7 @@ import { volumeKg } from '../lib/stats'
 const WEEK = 7 * 24 * 3600 * 1000
 // Coach signals scan your whole history: loaded after the page so the first paint stays fast.
 const CoachCard = lazy(() => import('../components/CoachCard').then((m) => ({ default: m.CoachCard })))
+const StatusCard = lazy(() => import('../components/StatusCard').then((m) => ({ default: m.StatusCard })))
 
 export function TodayPage() {
   const settings = useSettings()
@@ -68,6 +69,8 @@ export function TodayPage() {
           <p className="muted small">Your plan uses your gym's equipment, goal and schedule. In a free workout you add exercises as you go, and GymBro still suggests the weight.</p>
         </section>
       )}
+
+      {!active && <Suspense fallback={null}><StatusCard /></Suspense>}
 
       <section className="stat-row">
         <div className="card stat"><div className="stat-value">{thisWeek.length}</div><div className="muted small">workouts this week</div></div>

@@ -190,6 +190,36 @@ export const WHY = {
     rule: 'A new heaviest weight or a new best estimated one-rep max for an exercise.',
     evidence: 'strong', sources: [S.epley],
   },
+  xp_level: {
+    title: 'Level and XP',
+    rule: 'XP: 100 per finished workout, 2 per working set (up to 30), 50 per personal record, and 150 for each week you hit your plan. Each level needs 100 more XP than the last (level 2 at 100, 3 at 300, 4 at 600, 5 at 1,000).',
+    evidence: 'convention', sources: [],
+  },
+  stat_strength: {
+    title: 'Strength',
+    rule: 'Your best estimated one-rep max in a squat, a hinge (deadlift family) and a press, added up and divided by bodyweight (InBody weight if logged). 5× bodyweight scores 99.',
+    evidence: 'convention', sources: [S.epley],
+  },
+  stat_endurance: {
+    title: 'Endurance',
+    rule: 'Working sets per week over the last 4 weeks; 50 a week scores 99. A measure of training capacity, not cardio fitness.',
+    evidence: 'convention', sources: [S.schoenfeld],
+  },
+  stat_power: {
+    title: 'Power',
+    rule: 'Sessions with jumps, throws or agility work in the last 4 weeks; 8 or more scores 99. Add a sport or power focus day to train it.',
+    evidence: 'convention', sources: [S.nsca],
+  },
+  stat_consistency: {
+    title: 'Consistency',
+    rule: 'Workouts done in the last 4 weeks out of what your plan asks for.',
+    evidence: 'convention', sources: [],
+  },
+  stat_balance: {
+    title: 'Balance',
+    rule: 'Starts at 99 and drops for confident posture findings (12 mild, 20 moderate, 30 marked), a trunk rotation in the re-test band (15) or above it (30), and 10 for each limb with a 5%+ InBody left/right gap. A screening score, not a diagnosis.',
+    evidence: 'convention', sources: [S.janda, S.bunnell],
+  },
   consistency: {
     title: 'Consistency',
     rule: 'Workouts done this week compared with the days your plan asks for. Showing up consistently matters more than any single session.',

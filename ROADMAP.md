@@ -33,7 +33,7 @@ Build order follows dependencies: tracker data feeds progression, the exercise D
 ## Design pass (Design.md, 2026-10-11)
 User decisions: Bonfire + pixel theme, dark only; "active level" = character level + weekly activity goal; gym AI scan deferred (manual picking improved instead); theme first.
 - [x] Theme + Profile tab replaces More: souls theme ([ADR-012](decisions/ADR-012-bonfire-theme.md)), replaced by the sci-fi HUD theme ([ADR-013](decisions/ADR-013-scifi-hud-theme.md))
-- [ ] Today: character level and stats from training, weekly activity goal, goals and badges
+- [~] Today: level, stats, weekly activity rings and badges ✅ ([ADR-017](decisions/ADR-017-level-stats-badges.md)); user-set goals next
 - [x] Plan: choose a goal per workout day ([ADR-015](decisions/ADR-015-session-focus-sport-days.md): 6 sports + 4 focuses); references behind the plan: "Why?" panels with sources ([ADR-016](decisions/ADR-016-coach-reasoning.md))
 - [ ] History: finished plan → goal reached or not (InBody and body scans, start vs end)
 - [ ] Profile: full body report (body scan + InBody + imbalance tests)

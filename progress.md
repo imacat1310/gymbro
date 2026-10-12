@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Coach reasoning (v0.17.0): "Why?" on suggestions and plan items, Coach card on Today, "What your coach sees" on Profile
-- Next: Design pass → Today (level, activity goal, badges); opt-in AI coach waits on the backend decision (ideas #15)
+- Today status (v0.18.0): level + XP, weekly rings, 5 stats, 15 badges (Profile → Badges)
+- Next: goals (lift and body targets), then History "goal reached?"; opt-in AI coach parked (ideas.md "Pending decision")
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -49,6 +49,8 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Level/XP, rings, stats and badges derived from history, never stored ([ADR-017](decisions/ADR-017-level-stats-badges.md)) | Always consistent, re-tunable | Stored XP ledger |
+| 2026-10-12 | Opt-in AI coach parked by the user; full proposal saved in ideas.md | Costs money and sends data off the phone | Build now |
 | 2026-10-12 | Coach reasoning adapted from gymcoach (MIT): reason codes + sources, stall/deload signals, one Today insight, coach view; no AI ([ADR-016](decisions/ADR-016-coach-reasoning.md)) | User chose A and gymcoach as the model | LLM chat now (needs backend), on-device LLM |
 | 2026-10-12 | Session focus: sport-specific gym days, 6 sports + 4 focuses, curated slots ([ADR-015](decisions/ADR-015-session-focus-sport-days.md)) | User's choice | Playing days (later), both |
 | 2026-10-12 | Plan builder v2: body data → pause, correctives, strengthen, weaker side; rebuild prompts ([ADR-014](decisions/ADR-014-plan-builder-v2-body-data.md)) | User asked how the body report relates to the plan; it didn't | Live changes to existing plans |
@@ -67,6 +69,12 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (Today: level, stats, rings, badges, v0.18.0)
+- The opt-in AI coach decision is saved in ideas.md ("Pending decision") at the user's request.
+- **Built** (ADR-017): Status panel on Today (level hexagon, XP bar, 2 weekly rings, Strength / Endurance / Power / Consistency / Balance with one "How stats work"), Badges page (15 badges with dates and progress), XP/stat "Why?" entries. Coach insight above the next workout, Status below it.
+- **Fixed during testing:** records counted twice for one heavier lift (XP inflated: level 7 after 9 workouts → 6); zero-length rings drew dots; the panel pushed Start below the fold (reordered).
+- **Verified:** 224 unit tests ✅ (11 new); lint ✅; build ✅; E2E 9/9 ✅ (level, rings legend, 5 stats incl. Balance 99−20−10 = 69 from body data, badge strip, stat formulas, Badges page unlocks and progress, no console errors).
 
 ### 2026-10-12 (coach reasoning, v0.17.0)
 - **User:** option A (better explanations, no AI) using gymcoach (MIT) as the reasoning model. Read gymcoach's progression, deload, stall, home-insight and coach-context modules (read only, nothing run) and rewrote the design for GymBro (ADR-016; credited in THIRD_PARTY_NOTICES.md).
