@@ -4,7 +4,7 @@ import type { Area } from '../data/stress'
 import type { BodyData } from '../lib/bodyInput'
 import type { FocusId } from '../lib/focus'
 import { addDay } from '../lib/planEdit'
-import { buildPlan, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
+import { buildPlan, estimateMinutes, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
 import { db, uid, type Assessment, type BodyComp, type Goal, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
@@ -52,8 +52,8 @@ export async function getActiveSession() {
 
 /** Start a workout: empty, or from a plan day (exercises swapped for what the current gym allows). */
 export async function startSession(fromPlan?: { plan: StoredPlan; dayIndex: number }): Promise<string> {
-  const active = await getActiveSession()
-  if (active) return active.id
+  const existing = await getActiveSession()
+  if (existing) return existing.id
   const s = await getSettings()
   const id = uid()
   let entries: SessionEntry[] = []
@@ -68,11 +68,16 @@ export async function startSession(fromPlan?: { plan: StoredPlan; dayIndex: numb
       return exerciseId ? [{ key: uid(), exerciseId, target: item.target }] : []
     })
   }
-  await db.sessions.add({
-    id, gymId: s.activeGymId, startedAt: Date.now(), entries,
-    planId: fromPlan?.plan.id, dayIndex: fromPlan?.dayIndex,
+  // Check and add in one transaction: a double tap (or two tabs) must not create two active workouts.
+  return db.transaction('rw', db.sessions, async () => {
+    const active = await getActiveSession()
+    if (active) return active.id
+    await db.sessions.add({
+      id, gymId: s.activeGymId, startedAt: Date.now(), entries,
+      planId: fromPlan?.plan.id, dayIndex: fromPlan?.dayIndex,
+    })
+    return id
   })
-  return id
 }
 
 export async function getActivePlan(): Promise<StoredPlan | undefined> {
@@ -153,7 +158,10 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     bodyDataAt: body?.latestAt,
     pausedSpinal: !!body?.pause,
     dayFocus: dayFocus.some(Boolean) ? dayFocus : undefined,
-    goal: s.profile.goal,
+    // A rebuild changes the exercises, not the plan's history: a finished plan stays finished,
+    // and its report keeps the goal it started with.
+    goal: old?.goal ?? s.profile.goal,
+    finishedAt: old?.finishedAt,
   }
   await db.transaction('rw', db.plans, db.settings, async () => {
     await db.plans.put(stored)
@@ -183,9 +191,14 @@ export async function duplicatePlan(id: string): Promise<StoredPlan | undefined>
   const plan = await db.plans.get(id)
   if (!plan) return
   const now = Date.now()
-  const copy: StoredPlan = { ...structuredClone(plan), id: uid(), name: `${plan.name} (copy)`, createdAt: now, updatedAt: now }
-  await db.plans.add(copy)
-  await saveSettings({ activePlanId: copy.id })
+  // A copy is a new plan: it starts today, unfinished, judged against the current goal.
+  const { finishedAt: _finished, goal: _goal, ...rest } = structuredClone(plan)
+  const { profile } = await getSettings()
+  const copy: StoredPlan = { ...rest, id: uid(), name: `${plan.name} (copy)`, createdAt: now, updatedAt: now, goal: profile.goal }
+  await db.transaction('rw', db.plans, db.settings, async () => {
+    await db.plans.add(copy)
+    await saveSettings({ activePlanId: copy.id })
+  })
   return copy
 }
 
@@ -246,7 +259,9 @@ export async function swapPlanExercise(planId: string, dayIndex: number, itemInd
     reason: `${item.reason} (your pick)`,
     alternatives: [item.exerciseId, ...item.alternatives.filter((a) => a !== exerciseId)].slice(0, 4),
   }
-  await db.plans.update(planId, { days })
+  days[dayIndex].estMinutes = estimateMinutes(days[dayIndex].items)
+  // `edited` makes rebuilds ask before replacing the user's picks.
+  await db.plans.update(planId, { days, weeklySets: weeklySets(days), edited: true, updatedAt: Date.now() })
 }
 
 export async function addEntry(sessionId: string, exerciseId: string) {
@@ -328,15 +343,62 @@ export async function exerciseHistory(exerciseId: string, excludeSessionId?: str
 
 export const toLogged = (s: SetLog): LoggedSet => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe })
 
+/** Every table, so export, import and reset can't drift apart when a table is added. */
+const allTables = () => db.tables
+
 export async function exportAll() {
-  const [gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments, goals] = await Promise.all([
-    db.gyms.toArray(), db.settings.toArray(), db.sessions.toArray(), db.sets.toArray(), db.plans.toArray(), db.postureScans.toArray(), db.bodyComps.toArray(), db.assessments.toArray(), db.goals.toArray(),
-  ])
-  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: 7, gyms, settings, sessions, sets, plans, postureScans, bodyComps, assessments, goals }
+  const data: Record<string, unknown[]> = {}
+  await db.transaction('r', allTables(), async () => {
+    for (const t of allTables()) data[t.name] = await t.toArray()
+  })
+  return { app: 'gymbro', exportedAt: new Date().toISOString(), version: db.verno, ...data }
 }
 
 export async function resetAll() {
-  await Promise.all([db.gyms.clear(), db.settings.clear(), db.sessions.clear(), db.sets.clear(), db.plans.clear(), db.postureScans.clear(), db.bodyComps.clear(), db.assessments.clear(), db.goals.clear()])
+  await db.transaction('rw', allTables(), async () => {
+    for (const t of allTables()) await t.clear()
+  })
+}
+
+export class ImportError extends Error {}
+
+/**
+ * Replace all data with a backup from exportAll(). Validates first; nothing changes unless the whole import succeeds.
+ * Backups from newer app versions are refused (their data may not fit this version's schema).
+ */
+export async function importAll(json: unknown): Promise<{ sessions: number; sets: number }> {
+  if (!json || typeof json !== 'object' || (json as { app?: unknown }).app !== 'gymbro') {
+    throw new ImportError("This isn't a GymBro backup file.")
+  }
+  const backup = json as Record<string, unknown> & { version?: unknown }
+  if (typeof backup.version !== 'number' || backup.version > db.verno) {
+    throw new ImportError('This backup is from a newer version of GymBro. Update the app first.')
+  }
+  for (const t of allTables()) {
+    const rows = backup[t.name]
+    if (rows !== undefined && !Array.isArray(rows)) throw new ImportError(`The backup's "${t.name}" section is damaged.`)
+  }
+  await db.transaction('rw', allTables(), async () => {
+    for (const t of allTables()) {
+      await t.clear()
+      const rows = backup[t.name] as unknown[] | undefined
+      if (rows?.length) await t.bulkAdd(rows)
+    }
+  })
+  return { sessions: (backup.sessions as unknown[] | undefined)?.length ?? 0, sets: (backup.sets as unknown[] | undefined)?.length ?? 0 }
+}
+
+/**
+ * Ask the browser not to evict our data. Safari may wipe a non-installed site's storage after 7 days unused,
+ * and this app's data lives only on the phone. Safe to call repeatedly.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (!navigator.storage?.persist) return false
+    return (await navigator.storage.persisted()) || (await navigator.storage.persist())
+  } catch {
+    return false
+  }
 }
 
 export async function savePostureScan(scan: Omit<PostureScan, 'id' | 'appVersion'>) {

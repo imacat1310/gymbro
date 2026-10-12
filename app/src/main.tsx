@@ -8,11 +8,18 @@ import '@fontsource/exo-2/latin-600.css'
 import '@fontsource/share-tech-mono/latin-400.css'
 import './index.css'
 import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { requestPersistentStorage } from './db/repo'
+
+// All data lives only on this phone: ask the browser not to evict it.
+void requestPersistentStorage()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
-      <App />
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </ErrorBoundary>
   </StrictMode>,
 )

@@ -18,12 +18,18 @@ export function Stepper({ label, value, step, min = 0, suffix, onChange }: Props
     <div className="stepper">
       <span className="stepper-label">{label}</span>
       <div className="stepper-row">
-        <button type="button" className="step-btn" aria-label={`Decrease ${label}`} onClick={() => commit(value - step)}>−</button>
+        <button type="button" className="step-btn" aria-label={`Decrease ${label}`} onClick={() => { setDraft(null); commit(value - step) }}>−</button>
         <input
           inputMode="decimal"
           value={draft ?? String(value)}
           onFocus={(e) => { setDraft(String(value)); e.target.select() }}
-          onChange={(e) => setDraft(e.target.value.replace(',', '.'))}
+          onChange={(e) => {
+            const text = e.target.value.replace(',', '.')
+            setDraft(text)
+            // Commit as you type: on iPhone, tapping Log may not blur this field first.
+            const n = parseFloat(text)
+            if (!Number.isNaN(n)) commit(n)
+          }}
           onBlur={() => {
             const n = parseFloat(draft ?? '')
             if (!Number.isNaN(n)) commit(n)
@@ -31,7 +37,7 @@ export function Stepper({ label, value, step, min = 0, suffix, onChange }: Props
           }}
           aria-label={label}
         />
-        <button type="button" className="step-btn" aria-label={`Increase ${label}`} onClick={() => commit(value + step)}>+</button>
+        <button type="button" className="step-btn" aria-label={`Increase ${label}`} onClick={() => { setDraft(null); commit(value + step) }}>+</button>
       </div>
       {suffix && <span className="stepper-suffix">{suffix}</span>}
     </div>

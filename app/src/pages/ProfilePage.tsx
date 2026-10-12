@@ -1,22 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { db } from '../db/db'
 import { useSignals } from '../lib/coach/useSignals'
 import { coachView } from '../lib/coach/signals'
 import { ProfileForm } from '../components/ProfileForm'
-import { exportAll, resetAll, saveSettings } from '../db/repo'
+import { ImportError, resetAll, saveSettings } from '../db/repo'
+import { restoreBackup, shareBackup } from '../lib/backup'
 import { formatDate, useSettings } from '../lib/hooks'
-
-async function downloadExport() {
-  const data = await exportAll()
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `gymbro-export-${new Date().toISOString().slice(0, 10)}.json`
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
 
 export function ProfilePage() {
   const settings = useSettings()
@@ -81,10 +72,10 @@ export function ProfilePage() {
         <Link to="/profile/pose" className="button secondary">Pose speed test</Link>
       </section>
 
+      <DataSection />
+
       <section className="card stack">
-        <h2>Your data</h2>
-        <p className="muted small">Everything is stored only on this phone. Export a backup now and then.</p>
-        <button className="secondary" onClick={() => void downloadExport()}>Export data (JSON)</button>
+        <h2>Danger zone</h2>
         <button className="danger" onClick={async () => {
           if (confirm('Delete ALL GymBro data on this phone? This cannot be undone.') && confirm('Really delete everything?')) {
             await resetAll()
@@ -111,6 +102,43 @@ function CoachView() {
       <h2>What your coach sees</h2>
       <ul className="bullets small">{coachView(signals).map((l) => <li key={l}>{l}</li>)}</ul>
       <p className="muted small">This is everything the coach reasons over. It's worked out on this phone by fixed rules; nothing is sent anywhere.</p>
+    </section>
+  )
+}
+
+/** Backup and restore. Data lives only on this phone, so this is the user's only safety copy. */
+function DataSection() {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
+
+  async function onRestore(file: File) {
+    if (!confirm('Replace ALL data on this phone with this backup? Anything not in the backup will be lost.')) return
+    try {
+      const { sessions, sets } = await restoreBackup(file)
+      setMessage({ text: `Restored ${sessions} workouts and ${sets} sets.` })
+    } catch (err) {
+      setMessage({ text: err instanceof ImportError ? err.message : "Couldn't restore that file. Nothing was changed.", error: true })
+    }
+  }
+
+  return (
+    <section className="card stack">
+      <h2>Your data</h2>
+      <p className="muted small">
+        Everything is stored only on this phone. Save a backup now and then, for example to Files or iCloud Drive.
+        The file contains your body and health data, so keep it private.
+      </p>
+      <button className="secondary" onClick={async () => {
+        const result = await shareBackup()
+        if (result !== 'cancelled') setMessage({ text: 'Backup saved.' })
+      }}>Save backup</button>
+      <button className="secondary" onClick={() => fileRef.current?.click()}>Restore from backup</button>
+      <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => {
+        const file = e.target.files?.[0]
+        e.target.value = ''
+        if (file) void onRestore(file)
+      }} />
+      {message && <p className={`small ${message.error ? 'error' : 'muted'}`} role="status">{message.text}</p>}
     </section>
   )
 }

@@ -85,3 +85,19 @@ describe('progressBetween', () => {
     expect(progressBetween(20, 10, 15)).toBe(1)
   })
 })
+
+describe('body goal set before any InBody result', () => {
+  it('starts from the first result after the goal and can be reached', () => {
+    const g = body({ start: undefined })
+    const s = evaluateGoal(g, [], [comp(15, { pbf: 22 }), comp(40, { pbf: 18 }), comp(70, { pbf: 14.8 })], T0 + 75 * DAY)
+    expect(s.start).toBe(22)
+    expect(s.current).toBe(14.8)
+    expect(s.achieved).toBe(true)
+    expect(s.achievedAt).toBe(T0 + 70 * DAY)
+  })
+  it('shows progress before the target is reached', () => {
+    const s = evaluateGoal(body({ start: undefined }), [], [comp(15, { pbf: 22 }), comp(40, { pbf: 18.5 })], T0 + 45 * DAY)
+    expect(s.achieved).toBe(false)
+    expect(s.progress).toBeCloseTo(0.5, 2)
+  })
+})

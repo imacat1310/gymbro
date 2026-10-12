@@ -18,6 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
+- Developer review fixes, step 1 done (v0.24.0): data-loss bugs + data safety. Next: committed E2E test of the core loop, versioned pose/OCR caches, iPhone rest beep
+- InBody: decide between quick manual entry, keeping OCR, or vision AI (options in the 2026-10-13 log)
 - Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
 - Opt-in AI coach and camera scan parked on the AI-provider decision (ideas.md "Pending decision")
 
@@ -73,6 +75,20 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-13 (developer review, step 1: bugs + data safety, v0.24.0)
+- **Review:** four parallel reviews (correctness, architecture, PWA/UX/accessibility, security), top findings verified against the code. Baseline was healthy (types, lint, 272 tests, no runtime vulnerabilities); risks were data loss in the workout flow, local-only data safety, and scope ahead of the core loop.
+- **Fixed (each verified, most with a test):**
+  - double-tap Start created two active workouts → check + add in one transaction
+  - Finish while sets were loading offered to delete a workout with sets
+  - typed weight could be ignored on iPhone (field only saved on blur) → saves as you type; −/+ clear stale text
+  - duplicating a finished plan gave an already-finished copy
+  - plan swaps weren't marked as hand edits (lost on auto-rebuild; stale volume/minutes)
+  - rebuilding a finished plan reopened it and changed its report goal
+  - body goals set before any InBody result could never be reached
+- **Data safety:** persistent storage requested at startup (not only on Device check); backup **restore** with validation (refuses non-GymBro or newer-version files; all-or-nothing); backup uses the share sheet on iPhone (download fallback) and warns it holds health data; "Delete all" is one transaction; export/import/reset iterate all tables so they can't drift; app-wide error screen with "Save a backup first".
+- **Tests:** new `db/repo.test.ts` against fake-indexeddb (dev-only dependency) + goal tests: 284 tests ✅. Mutation check: undoing the start-session and duplicate fixes makes their tests fail. Lint ✅, build ✅. Browser smoke test 7/7 ✅ (double tap → 1 workout, bad backup rejected, data unchanged, no console errors).
+- **Not verified on a real iPhone:** typing a weight then tapping Log; share-sheet backup; persistent-storage grant.
 
 ### 2026-10-12 (faster manual gym setup, v0.23.0)
 - **Built** (ADR-021):

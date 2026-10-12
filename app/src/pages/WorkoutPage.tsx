@@ -24,8 +24,9 @@ export function WorkoutPage() {
   const workingCount = sets?.filter((s) => s.kind === 'working').length ?? 0
 
   async function finish() {
-    if (!session) return
-    if (!sets?.length) {
+    // `sets` is undefined while it loads: don't mistake that for an empty workout and offer to delete it.
+    if (!session || sets === undefined) return
+    if (!sets.length) {
       if (confirm('No sets logged. Discard this workout?')) {
         await discardSession(session.id)
         navigate('/')

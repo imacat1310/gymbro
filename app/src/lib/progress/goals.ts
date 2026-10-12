@@ -70,7 +70,11 @@ export function evaluateGoal(g: Goal, sets: SetLog[], comps: BodyComp[], now: nu
     const metric = g.metric!
     const series = comps.filter((c) => c.values[metric] !== undefined).sort((a, b) => a.measuredAt - b.measuredAt)
     const latest = series.at(-1)?.values[metric]
-    const start = g.start ?? series.filter((c) => c.measuredAt <= g.createdAt).at(-1)?.values[metric]
+    // Start: stored at creation, else the last result before the goal, else (goal set before any result)
+    // the first result after it, so the goal can still be tracked and reached.
+    const start = g.start
+      ?? series.filter((c) => c.measuredAt <= g.createdAt).at(-1)?.values[metric]
+      ?? series.find((c) => c.measuredAt > g.createdAt)?.values[metric]
     const down = start !== undefined ? g.target! < start : false
     const met = (v: number) => (down ? v <= g.target! : v >= g.target!)
     const hit = start === undefined ? undefined : series.find((c) => c.measuredAt >= g.createdAt && met(c.values[metric]!))
