@@ -34,6 +34,10 @@ export function ProfilePage() {
 
       <section className="card stack">
         <h2>Body</h2>
+        <Link to="/profile/body-report" className="test-link featured">
+          <b>Full body report</b>
+          <span className="muted small">Posture, body composition, left/right balance and trunk test in one place, with what changed.</span>
+        </Link>
         <Link to="/profile/body" className="test-link">
           <b>Body composition</b>
           <span className="muted small">

@@ -36,7 +36,7 @@ User decisions: Bonfire + pixel theme, dark only; "active level" = character lev
 - [x] Today: level, stats, weekly activity rings and badges ([ADR-017](decisions/ADR-017-level-stats-badges.md)); lift and body goals ([ADR-018](decisions/ADR-018-goals.md))
 - [x] Plan: choose a goal per workout day ([ADR-015](decisions/ADR-015-session-focus-sport-days.md): 6 sports + 4 focuses); references behind the plan: "Why?" panels with sources ([ADR-016](decisions/ADR-016-coach-reasoning.md))
 - [x] History: finished plan → goal reached or not (InBody and body scans, start vs end) ([ADR-019](decisions/ADR-019-plan-length-and-report.md))
-- [ ] Profile: full body report (body scan + InBody + imbalance tests)
+- [x] Profile: full body report (body scan + InBody + imbalance tests) ([ADR-020](decisions/ADR-020-full-body-report.md))
 - [ ] Gym: faster manual equipment picking (camera scan waits on the AI-provider decision)
 
 ## Phase 3: See you (weeks 11–15)

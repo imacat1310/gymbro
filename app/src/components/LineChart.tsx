@@ -13,6 +13,8 @@ interface Props {
 const W = 340
 const H = 180
 const PAD = { top: 12, right: 12, bottom: 24, left: 40 }
+/** Approximate width of one axis-label character (11 px monospace), to size the left margin to the labels. */
+const CHAR_W = 6.8
 
 function niceTicks(min: number, max: number, count = 3) {
   const span = max - min || 1
@@ -34,9 +36,10 @@ export function LineChart({ points, label, formatX, formatY }: Props) {
   const ticks = niceTicks(Math.min(...ys), Math.max(...ys))
   const yMin = ticks[0]
   const yMax = Math.max(ticks[ticks.length - 1], Math.max(...ys))
+  const padLeft = Math.max(PAD.left, Math.max(...ticks.map((t) => formatY(t).length)) * CHAR_W + 10)
   const xMin = Math.min(...xs)
   const xMax = Math.max(...xs)
-  const sx = (x: number) => PAD.left + ((x - xMin) / (xMax - xMin || 1)) * (W - PAD.left - PAD.right)
+  const sx = (x: number) => padLeft + ((x - xMin) / (xMax - xMin || 1)) * (W - padLeft - PAD.right)
   const sy = (y: number) => PAD.top + (1 - (y - yMin) / (yMax - yMin || 1)) * (H - PAD.top - PAD.bottom)
   const path = points.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ')
 
@@ -62,8 +65,8 @@ export function LineChart({ points, label, formatX, formatY }: Props) {
       >
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={sy(t)} y2={sy(t)} className="chart-grid" />
-            <text x={PAD.left - 6} y={sy(t)} className="chart-axis" textAnchor="end" dominantBaseline="middle">{formatY(t)}</text>
+            <line x1={padLeft} x2={W - PAD.right} y1={sy(t)} y2={sy(t)} className="chart-grid" />
+            <text x={padLeft - 6} y={sy(t)} className="chart-axis" textAnchor="end" dominantBaseline="middle">{formatY(t)}</text>
           </g>
         ))}
         <text x={sx(xMin)} y={H - 6} className="chart-axis" textAnchor="start">{formatX(xMin)}</text>

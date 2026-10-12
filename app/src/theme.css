@@ -275,3 +275,11 @@ input::placeholder { color: #4b6478; }
 .change-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
 .change-list .up { color: var(--sev-ok); } .change-list .down { color: var(--sev-marked); }
 .data { font-family: var(--font-data); }
+
+/* Full body report (ADR-020) */
+.focus-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.focus-list b { text-transform: capitalize; color: var(--accent-hi); font-weight: 600; }
+.change-list .sev-chip { font-size: 0.65rem; padding: 1px 6px; }
+.sev-chip.sev-none { color: var(--sev-ok); }
+.trend-improved, .trend-resolved { color: var(--sev-ok); } .trend-worse, .trend-new { color: var(--sev-mild); } .trend-same, .trend-none { color: var(--muted); }
+.test-link.featured { border-color: var(--accent-deep); background: var(--accent-soft); }

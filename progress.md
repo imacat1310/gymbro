@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Posture scan right side (v0.21.0): optional 4th view; left vs right shoulder depth
-- Next: Profile full body report (now), then faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
+- Full body report (v0.22.0): Profile → Full body report
+- Next (Design.md, last item): faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -49,6 +49,8 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Full body report: one derived page for posture, InBody, left/right, trunk test, with scan-to-scan trends and a combined training focus ([ADR-020](decisions/ADR-020-full-body-report.md)) | Design.md Profile item | Separate pages only |
+| 2026-10-12 | Posture scan: optional right-side view, both sides averaged, tentative shoulder-depth finding (ADR-009 rev. 1) | User asked whether the right side is needed | Left only |
 | 2026-10-12 | Plans have a length (default 8 weeks) or finish early; verdict by training goal from InBody, lifts, adherence and posture scans ([ADR-019](decisions/ADR-019-plan-length-and-report.md)) | Answers Design.md's "goal reached?" | Open-ended plans |
 | 2026-10-12 | Goals: lift (e1RM) and body (InBody) targets, derived progress and pace ([ADR-018](decisions/ADR-018-goals.md)) | Fits Design.md; feeds History's "goal reached" | Stored progress |
 | 2026-10-12 | Level/XP, rings, stats and badges derived from history, never stored ([ADR-017](decisions/ADR-017-level-stats-badges.md)) | Always consistent, re-tunable | Stored XP ledger |
@@ -71,6 +73,16 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (full body report, v0.22.0)
+- **Built** (ADR-020): Profile → Full body report:
+  - summary: Balance score, combined training focus with reasons, stretches
+  - body composition: latest values, change since the first, 3 trend charts
+  - left/right lean mass
+  - posture findings vs the previous scan
+  - trunk test, referral card, buttons for missing data
+- **Fixed:** line-chart axis labels were clipped for values like "74.8 kg" (margin now sized to the labels; also helps exercise charts).
+- **Verified:** 266 unit tests ✅ (7 new: missing data, composition change and series, limb gaps into focus, scan trends improved / new / resolved, trunk); lint ✅; build ✅; E2E 9/9 ✅ (all sections from seeded history; empty state; no console errors).
 
 ### 2026-10-12 (posture scan: optional right side, v0.21.0)
 - **User asked** whether the scan needs the right side. Answer: front and back already compare left and right heights, but the side view sees only its near side. The right side adds sagittal left/right differences and steadier numbers. The user chose to add it.
