@@ -28,3 +28,7 @@ public/mediapipe
 
 # Copied from node_modules by scripts/copy-ocr-assets.mjs
 public/ocr
+
+# Playwright output
+test-results/
+playwright-report/

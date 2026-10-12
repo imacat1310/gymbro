@@ -1,0 +1,32 @@
+// End-to-end tests of real user flows in real browser engines. WebKit (Safari's engine) at iPhone size is
+// the closest stand-in for the installed iPhone app; Chromium at Android size covers Chrome.
+// Files are *.e2e.ts so Vitest (unit tests) doesn't pick them up.
+import { defineConfig, devices } from '@playwright/test'
+
+const PORT = 4180
+
+export default defineConfig({
+  testDir: 'e2e',
+  testMatch: '**/*.e2e.ts',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? 'github' : 'list',
+  use: {
+    baseURL: `http://localhost:${PORT}/gymbro/`,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    { name: 'iphone-webkit', use: { ...devices['iPhone 15'] } },
+    { name: 'android-chromium', use: { ...devices['Pixel 7'] } },
+  ],
+  // Production build served like GitHub Pages (under /gymbro/), including the service worker.
+  webServer: {
+    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    env: { BASE_PATH: '/gymbro/' },
+    url: `http://localhost:${PORT}/gymbro/`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
+})

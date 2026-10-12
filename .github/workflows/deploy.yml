@@ -31,6 +31,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # End-to-end: the core loop in WebKit (Safari's engine, iPhone size) and Chromium (Android size).
+      - run: npx playwright install --with-deps webkit chromium
+      - run: npm run e2e
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/

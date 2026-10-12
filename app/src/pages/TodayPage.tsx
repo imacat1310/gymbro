@@ -49,15 +49,18 @@ export function TodayPage() {
           <div className="hero-number">{formatDuration(now - active.startedAt)}</div>
           <div>{active.entries.length} exercises · tap to continue</div>
         </Link>
+      ) : plan === undefined || (plan && (nextDay === undefined || !plan.days[nextDay])) ? (
+        // Still loading (or the plan just changed): render nothing rather than the wrong day or "Build my plan".
+        null
       ) : plan ? (
         <section className="card hero-card">
           <div className="muted small">Next in {plan.name}</div>
-          <h2>{plan.days[nextDay ?? 0].name}</h2>
+          <h2>{plan.days[nextDay!].name}</h2>
           <p className="muted small">
-            {plan.days[nextDay ?? 0].items.map((i) => EXERCISE_BY_ID.get(i.exerciseId)?.name).filter(Boolean).join(' · ')}
+            {plan.days[nextDay!].items.map((i) => EXERCISE_BY_ID.get(i.exerciseId)?.name).filter(Boolean).join(' · ')}
           </p>
-          <button className="wide" onClick={async () => { await startSession({ plan, dayIndex: nextDay ?? 0 }); navigate('/workout') }}>
-            Start {plan.days[nextDay ?? 0].name} · ~{plan.days[nextDay ?? 0].estMinutes} min
+          <button className="wide" onClick={async () => { await startSession({ plan, dayIndex: nextDay! }); navigate('/workout') }}>
+            Start {plan.days[nextDay!].name} · ~{plan.days[nextDay!].estMinutes} min
           </button>
           <button className="ghost" onClick={async () => { await startSession(); navigate('/workout') }}>Or start a free workout</button>
         </section>

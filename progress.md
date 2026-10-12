@@ -18,7 +18,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Developer review fixes, step 1 done (v0.24.0): data-loss bugs + data safety. Next: committed E2E test of the core loop, versioned pose/OCR caches, iPhone rest beep
+- Developer review fixes: step 1 (v0.24.0) and step 2 (v0.24.1, E2E in CI) done. Next: versioned pose/OCR caches, iPhone rest beep
 - InBody: kept as is (user, 2026-10-13); options parked in ideas.md #19
 - Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
 - Opt-in AI coach and camera scan parked on the AI-provider decision (ideas.md "Pending decision")
@@ -44,6 +44,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 | Date | Decision | Why | Alternatives considered |
 |---|---|---|---|
+| 2026-10-13 | Playwright E2E (WebKit at iPhone size + Chromium at Android size), run in CI before deploy | WebKit is Safari's engine; runs in CI; standard | Puppeteer + local Edge (no CI, Chromium only), Vitest-only flow test (no real screens) |
 | 2026-10-08 | Rules engine decides plans and progression; AI only for perception and explanations | Deterministic, testable, safe | End-to-end LLM planning |
 | 2026-10-08 | Pose estimation on-device; raw body media not uploaded by default | Privacy, latency, cost | Server-side video analysis |
 | 2026-10-08 | **Accepted:** PWA, with a Capacitor wrap as upgrade path ([ADR-001](decisions/ADR-001-distribution-and-platform.md)) | Only option that fully avoids app stores on iOS | RN/Expo sideload, Flutter sideload, native install over cable via Xcode |
@@ -75,6 +76,13 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-13 (developer review, step 2: end-to-end tests, v0.24.1)
+- **Playwright** (`app/e2e/*.e2e.ts`, `npm run e2e`), in WebKit (iPhone 15) and Chromium (Pixel 7), against the production build served under `/gymbro/`. Added to the deploy workflow after the unit tests, so a broken core loop never publishes.
+- **Core-loop test:** onboarding → build plan → Today starts day 1 → type 60 kg, log every target set (rest bar shown, skipped) → finish → summary suggests +kg → plan rotates to day 2 → free workout with the same exercise suggests more than 60 kg → log it → personal record shown → History lists 2 workouts → no console errors. Plus: double tap on Start makes one workout.
+- **Bug found by the WebKit run:** Today briefly showed day 1 (and, for a moment, "Build my plan") while the next day loaded, so a quick tap could start the wrong day. Today now waits for the plan and its next day, and guards a next-day index past the end after switching plans.
+- **Mutation checks:** with the "save as you type" fix undone, the test failed only after making the first Log a script click that keeps focus in the field (like an iPhone tap). Playwright's normal click blurs the field and hid the bug.
+- **Stability:** 20/20 and 12/12 repeated runs passed. Unit 284 ✅, lint ✅, type-check (new `tsconfig.e2e.json`) ✅.
 
 ### 2026-10-13 (developer review, step 1: bugs + data safety, v0.24.0)
 - **Review:** four parallel reviews (correctness, architecture, PWA/UX/accessibility, security), top findings verified against the code. Baseline was healthy (types, lint, 272 tests, no runtime vulnerabilities); risks were data loss in the workout flow, local-only data safety, and scope ahead of the core loop.
