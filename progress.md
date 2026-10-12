@@ -18,6 +18,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
+- **Form check v1 (squat, beta) shipped (v0.25.0, ADR-022).** Needs real-set validation: record a few deliberate sets (good, shallow, knees in) and share the body points for tuning
 - Developer review fixes: steps 1–3 done (v0.24.0–v0.24.2). Next candidates: offline pre-download of pose/OCR, performance (whole-table queries, workout re-render), accessibility (contrast, tap targets, focus ring)
 - InBody: kept as is (user, 2026-10-13); options parked in ideas.md #19
 - Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
@@ -44,6 +45,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 | Date | Decision | Why | Alternatives considered |
 |---|---|---|---|
+| 2026-10-13 | Form check: on-device rules, post-set analysis, thresholds/tips personalised by body data ([ADR-022](decisions/ADR-022-form-check.md)) | Private, offline, testable; "judge you against what's normal for your build" | Vision AI on video; live spoken cues; one textbook standard for everyone |
 | 2026-10-13 | Pose/OCR runtimes at versioned URLs + versioned cache names; outdated caches deleted at startup | A library upgrade can't mix new code with old cached files; no stale tens-of-MB caches | Version in path only (old caches never freed), custom service worker |
 | 2026-10-13 | Playwright E2E (WebKit at iPhone size + Chromium at Android size), run in CI before deploy | WebKit is Safari's engine; runs in CI; standard | Puppeteer + local Edge (no CI, Chromium only), Vitest-only flow test (no real screens) |
 | 2026-10-08 | Rules engine decides plans and progression; AI only for perception and explanations | Deterministic, testable, safe | End-to-end LLM planning |
@@ -77,6 +79,17 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-13 (form check v1: squat, personalised by body data, v0.25.0)
+- **Decision (ADR-022, user approved):** on-device rules (AI wording later), analysis after the set, and thresholds and tips adjusted by body data. Spec updated (`features/04-form-check.md`, "Personalisation by body data").
+- **Analysis (`lib/form/`, pure):** reps from hip drop (works from side and front) with hysteresis. Side view: depth (thigh vs parallel), torso lean vs a **personal limit** (45° base, +50° per unit of femur/torso above 0.9, kept within 38–60°, 5° stricter with a lower-back limitation, where it becomes a safety fault), heel rise, active-lowering tempo, fatigue (last 2 reps vs first 2). Front view: knee cave **relative to the user's own standing alignment** (static valgus isn't double counted; stricter when the posture scan found it), sideways hip shift linked to the **weaker leg from InBody**. Knee limitation means depth isn't pushed. Score per spec, top 2 tips, each with a personal "Why for you?", and `blockIncrease`. Says plainly what isn't measured (lumbar rounding, bar path).
+- **Screen (`/form/:exerciseId`, lazy-loaded):** angle and camera choice, "Personalised with" card, live skeleton, framing hints (step in / whole body / turn side-on / face the camera / step back), 3-2-1 spoken countdown, live spoken rep count, then the report (score, tips, faults, rep table, personal settings, beta note). Opt-in "share body points for tuning" (no video). Reports saved to the new `formChecks` table (DB v8; no video, no landmarks). Entry points: "Check form" on squat cards in the workout, and a button on the exercise page.
+- **Bugs caught while building:**
+  - a fixed "moving" threshold cut slow descents short → tempo is now measured from 5% to 95% of each rep's depth, and the tip doesn't quote seconds (the measured active lowering is shorter than it feels)
+  - the camera loop would have used a stale profile if body data loaded after the camera started → refs
+  - a side-on person in a front-view check was told "whole body not visible" → now "Face the camera"
+- **Tests:** 319 unit ✅ (+29: synthetic squat generator with depth, lean, heel, tempo, cave, static valgus, shift and jitter; personal lean limit; body data → profile; framing; report screen rendered from real analyses). 12 E2E ✅ (entry point → setup → personalisation card; camera guidance with Record disabled until in position; unsupported exercise). Analysis code verified to be in the lazy chunk only.
+- **Not verified:** accuracy on real sets. All thresholds are marked as assumptions until tuned on labelled recordings from the user.
 
 ### 2026-10-13 (developer review, step 3: versioned runtimes + iPhone rest beep, v0.24.2)
 - **Versioned runtimes:** `scripts/asset-versions.mjs` is the single source for the MediaPipe and Tesseract versions (plus a hash of the committed pose models). Files ship at `mediapipe/<version>/wasm/` and `ocr/<version>/`; the copy scripts rebuild those folders, so old versions never ship. Service-worker caches are named `pose-assets-<version>-<models hash>` and `ocr-assets-<version>`. `lib/assetCaches.ts` deletes outdated or unversioned ones at startup.

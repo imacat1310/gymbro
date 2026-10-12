@@ -8,6 +8,7 @@ import type { InBodyField, InBodyValues } from '../lib/inbody'
 import type { TrunkResult } from '../lib/trunk'
 import type { FocusId } from '../lib/focus'
 import type { Plan } from '../lib/planner'
+import type { FormReport } from '../lib/form/types'
 import type { Goal as TrainingGoal, Profile, Target } from '../lib/targets'
 
 export interface Gym {
@@ -162,6 +163,17 @@ export interface Goal {
   deadline?: number
 }
 
+/** A form-check result (ADR-022). Only the report is kept: no video, no landmarks. */
+export interface FormCheck {
+  id: string
+  takenAt: number
+  exerciseId: string
+  /** The workout it was recorded in, when started from the tracker. */
+  sessionId?: string
+  report: FormReport
+  appVersion: string
+}
+
 export const db = new Dexie('gymbro') as Dexie & {
   gyms: EntityTable<Gym, 'id'>
   settings: EntityTable<Settings, 'id'>
@@ -172,6 +184,7 @@ export const db = new Dexie('gymbro') as Dexie & {
   bodyComps: EntityTable<BodyComp, 'id'>
   assessments: EntityTable<Assessment, 'id'>
   goals: EntityTable<Goal, 'id'>
+  formChecks: EntityTable<FormCheck, 'id'>
 }
 
 db.version(1).stores({
@@ -206,5 +219,6 @@ db.version(4).stores({}).upgrade(async (tx) => {
 db.version(5).stores({ bodyComps: 'id, measuredAt' })
 db.version(6).stores({ assessments: 'id, type, takenAt' })
 db.version(7).stores({ goals: 'id, kind, createdAt' })
+db.version(8).stores({ formChecks: 'id, exerciseId, takenAt' })
 
 export const uid = () => crypto.randomUUID()

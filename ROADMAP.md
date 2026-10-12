@@ -51,10 +51,10 @@ User decisions: Bonfire + pixel theme, dark only; "active level" = character lev
 - **Milestone:** public beta
 
 ## Phase 4: Coach you (weeks 16–22)
-- [ ] Form check post-set analysis for 5 key lifts
-- [ ] Pose-based rep counting (auto-fills rep count in the tracker)
+- [~] Form check post-set analysis for 5 key lifts: ✅ **squat v1 (beta)** with body-data personalisation ([ADR-022](decisions/ADR-022-form-check.md)). Next: RDL/deadlift, bench/OHP; tune on real recordings
+- [~] Pose-based rep counting: ✅ live spoken count during a form check. To do: auto-fill the tracker
 - [ ] LLM coaching cues from fault metrics
-- [ ] Form-aware progression (don't increase load while form faults are significant)
+- [~] Form-aware progression: ✅ form reports set `blockIncrease` (safety fault / score < 60 / fatigue). To do: feed it to the next-weight suggestion
 - **Milestone:** v1.0 launch, Pro subscription
 
 ## Phase 5: Beyond v1

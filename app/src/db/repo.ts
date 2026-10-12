@@ -7,7 +7,7 @@ import { addDay } from '../lib/planEdit'
 import { buildPlan, estimateMinutes, substituteForGym, weeklySets, type Plan, type PlanDay } from '../lib/planner'
 import type { LoggedSet } from '../lib/progression'
 import { defaultTarget, type Profile } from '../lib/targets'
-import { db, uid, type Assessment, type BodyComp, type Goal, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
+import { db, uid, type Assessment, type BodyComp, type FormCheck, type Goal, type Gym, type Schedule, type SessionEntry, type SetKind, type SetLog, type PostureScan, type Settings, type StoredPlan } from './db'
 
 export const DEFAULT_PROFILE: Profile = { goal: 'hypertrophy', experience: 'beginner', intensity: 'moderate' }
 
@@ -435,5 +435,11 @@ export async function addGoal(g: Omit<Goal, 'id' | 'createdAt' | 'start'>) {
 }
 
 export const deleteGoal = (id: string) => db.goals.delete(id)
+
+export async function saveFormCheck(report: FormCheck['report'], sessionId?: string) {
+  const id = uid()
+  await db.formChecks.add({ id, takenAt: Date.now(), exerciseId: report.exerciseId, sessionId, report, appVersion: __APP_VERSION__ })
+  return id
+}
 
 export type { SetKind }

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { LineChart } from '../components/LineChart'
 import { EQUIPMENT_BY_ID } from '../data/equipment'
 import { EXERCISE_BY_ID, PATTERN_LABELS } from '../data/exercises'
+import { supportsFormCheck } from '../lib/form/supported'
 import { exerciseHistory } from '../db/repo'
 import { formatDate } from '../lib/hooks'
 import { fmtKg } from '../lib/progression'
@@ -41,6 +42,10 @@ export function ExercisePage() {
             ? <LineChart points={points} label={`Estimated 1RM for ${ex.name} over time`} formatX={(x) => formatDate(x)} formatY={(y) => `${+y.toFixed(1)} kg`} />
             : <p className="muted small">Log this exercise in another session to see your trend.</p>}
         </section>
+      )}
+
+      {supportsFormCheck(ex.id) && (
+        <Link to={`/form/${ex.id}`} className="button">Check your form with the camera</Link>
       )}
 
       <section className="card stack">

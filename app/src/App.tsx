@@ -29,6 +29,7 @@ const GoalsPage = lazy(() => import('./pages/GoalsPage').then((m) => ({ default:
 const BadgesPage = lazy(() => import('./pages/BadgesPage').then((m) => ({ default: m.BadgesPage })))
 const TrunkTestPage = lazy(() => import('./pages/TrunkTestPage').then((m) => ({ default: m.TrunkTestPage })))
 const PostureReportPage = lazy(() => import('./pages/PostureReportPage').then((m) => ({ default: m.PostureReportPage })))
+const FormCheckPage = lazy(() => import('./pages/FormCheckPage').then((m) => ({ default: m.FormCheckPage })))
 
 /** Shown on every screen except the workout itself, so an active session is never lost. */
 function ActiveWorkoutBanner() {
@@ -90,6 +91,7 @@ function App() {
         <Route path="history" element={<HistoryPage />} />
         <Route path="history/plan/:id" element={<PlanReportPage />} />
         <Route path="exercise/:id" element={<ExercisePage />} />
+        <Route path="form/:exerciseId" element={<FormCheckPage />} />
         <Route path="gym" element={<GymPage />} />
         <Route path="gym/setup" element={<GymTourPage />} />
         <Route path="library" element={<LibraryPage />} />

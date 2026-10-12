@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { EXERCISE_BY_ID, type Exercise } from '../data/exercises'
+import { supportsFormCheck } from '../lib/form/supported'
 import type { SessionEntry, SetLog } from '../db/db'
 import { deleteSet, exerciseHistory, logSet, removeEntry, startRest, toLogged } from '../db/repo'
 import { unlockAudio } from '../lib/alerts'
@@ -57,6 +58,7 @@ export function EntryCard({ sessionId, entry, sets, experience }: Props) {
           <div className="muted small">
             {target.sets} × {target.repMin}–{target.repMax} {unit} @ RPE {target.targetRpe} · rest {Math.round(target.restSec / 60 * 10) / 10} min
           </div>
+          {supportsFormCheck(ex.id) && <Link to={`/form/${ex.id}?session=${sessionId}`} className="form-link small">Check form</Link>}
         </div>
         <button className="ghost small" aria-label={`Remove ${ex.name}`} onClick={() => {
           if (sets.length === 0 || confirm(`Remove ${ex.name} and its ${sets.length} logged sets?`)) void removeEntry(sessionId, entry.key)

@@ -3,6 +3,8 @@
 ## Goal
 The user records a set. GymBro analyses each rep the way a trainer would: it finds technique faults, scores the form, and gives a few short corrective cues with a visual overlay.
 
+> **Status (2026-10-13):** [ADR-022](../decisions/ADR-022-form-check.md) accepted. On-device rules, post-set analysis, thresholds and tips personalised by body data. v1 = squat. The LLM coaching layer below is deferred to the AI-provider decision. Until then, tips are templated from the metrics.
+
 ## Modes
 | Mode | Release | Description |
 |---|---|---|
@@ -73,6 +75,22 @@ Hysteresis and minimum duration filters reject noise and half reps (counted sepa
 | Row | `short_rom` | Elbow doesn't pass the torso line | "Pull to your belly, squeeze shoulder blades" |
 
 ⚠️ = **safety fault**: highlighted in red, blocks load increase in the progression engine.
+
+## Personalisation by body data (ADR-022)
+The same rep can be fine for one body and a fault for another. Body data changes thresholds, what is watched and which tip is given:
+
+| Body data (source) | Squat v1 effect |
+|---|---|
+| Femur ÷ torso ratio (posture scan) | Allowed torso lean at the bottom scales with it; long-femur lean is "normal for your build", with stance/heel-elevation tips |
+| Static knee valgus (posture finding) | Stricter knee-cave threshold (front view); tip references the scan and the warm-up correctives |
+| Weaker leg (InBody segmental, ≥5%) | Hip shift away from the weaker leg is linked to it; tip: start single-leg work with that side |
+| Knee limitation (Settings) | Depth not pushed; "comfortable depth" tip |
+| Lower-back limitation (Settings) | Lean limit 5° stricter; excessive lean = safety fault |
+| The set itself | Last reps vs first reps: breakdown = fatigue → hold the weight |
+
+Knee cave is measured **relative to the user's own standing alignment** (first still frames), so a static valgus isn't counted twice.
+
+**v1 not measured:** lumbar flexion ("butt wink") and bar path; the report says so.
 
 ## Form score
 ```
