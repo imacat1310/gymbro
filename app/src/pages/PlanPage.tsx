@@ -8,12 +8,13 @@ import { Why } from '../components/Why'
 import type { Muscle } from '../data/exercises'
 import { db, type Schedule, type Settings, type StoredPlan } from '../db/db'
 import {
-  acknowledgeReferrals, buildAndSavePlan, createEmptyPlan, getBodyPlanInput, setDayFocus, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
+  acknowledgeReferrals, buildAndSavePlan, createEmptyPlan, finishPlan, getBodyPlanInput, setDayFocus, DEFAULT_SCHEDULE, deletePlan, duplicatePlan, getActivePlan, listPlans, nextPlanDayIndex,
   saveSettings, setActivePlan, startSession, swapPlanExercise,
 } from '../db/repo'
 import { FOCUS, FOCUS_ORDER, type FocusId } from '../lib/focus'
+import { planWindow } from '../lib/progress/planReport'
 import { checkPlan, type PlanWarning } from '../lib/planEdit'
-import { useActiveSession, useActiveGym, useSettings } from '../lib/hooks'
+import { formatDate, useActiveSession, useActiveGym, useNow, useSettings } from '../lib/hooks'
 import { muscleLabel } from '../lib/planner'
 
 const VOLUME_ORDER = ['chest', 'lats', 'upper_back', 'side_delt', 'rear_delt', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'abs'] as const
@@ -33,6 +34,7 @@ export function PlanPage() {
   const [mode, setMode] = useState<Mode>('view')
   const [showPlans, setShowPlans] = useState(false)
   const [focusFor, setFocusFor] = useState<number | null>(null)
+  const now = useNow(60_000)
 
   if (!settings || plan === undefined || plans === undefined) return null
   const current = mode === 'new' || !plan ? null : plan
@@ -64,6 +66,7 @@ export function PlanPage() {
     if (current && !current.edited) await buildAndSavePlan({ name: current.name, schedule: current.schedule, priorities: current.priorities }, current.id)
   }
 
+  const planWin = current ? planWindow(current, now) : undefined
   const stale = !!(current && body && (current.bodyDataAt ?? 0) < body.latestAt)
   const pauseLifted = !!(current?.pausedSpinal && !body?.pause)
 
@@ -83,6 +86,7 @@ export function PlanPage() {
         <div>
           <h1>{current?.name ?? (plans.length ? 'New plan' : 'Plan')}</h1>
           <p className="muted">{current ? `${current.splitName} · ${planGym?.name ?? gym?.name ?? ''}` : 'Built from your goal, gym, schedule and body'}</p>
+          {current && planWin && <p className="muted small data">{planWin.finished ? `Finished ${formatDate(planWin.end)}` : `Week ${planWin.week} of ${planWin.weeks} · ends ${formatDate(planWin.end)}`}</p>}
         </div>
         {plans.length > 0 && mode !== 'edit' && (
           <button className="secondary" onClick={() => setShowPlans(true)}>Plans{plans.length > 1 ? ` (${plans.length})` : ''}</button>
@@ -104,6 +108,16 @@ export function PlanPage() {
             ))}
           </div>
           <button className="ghost small" onClick={() => void acknowledge()}>I've had it checked: include them again</button>
+        </section>
+      )}
+
+      {current && planWin?.finished && mode === 'view' && (
+        <section className="card-callout stack small">
+          <span>This plan has finished. See whether it reached its goal, then build your next one.</span>
+          <div className="row">
+            <Link to={`/history/plan/${current.id}`} className="button">Plan report</Link>
+            <button className="secondary" onClick={() => setMode('new')}>Next plan</button>
+          </div>
         </section>
       )}
 
@@ -195,6 +209,11 @@ export function PlanPage() {
               <button className="secondary" onClick={() => void duplicatePlan(current.id)}>Duplicate</button>
               <button className="danger" onClick={() => void remove(current)}>Delete</button>
             </div>
+            {!planWin?.finished && (
+              <button className="ghost small" onClick={() => { if (confirm('Finish this plan now? Its report compares the start with today.')) void finishPlan(current.id) }}>
+                Finish plan now
+              </button>
+            )}
           </section>
         </>
       )}

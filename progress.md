@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Goals (v0.19.0): Profile → Goals (lift and body targets, pace); shown on Today; "Goal reached" insight and badge
-- Next: History, plan finished → goal reached or not (InBody and scans); opt-in AI coach parked (ideas.md "Pending decision")
+- Plan reports (v0.20.0): plan length + "Finish plan now"; History → Plans with verdicts; plan report
+- Next (Design.md): Profile full body report, then faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -49,6 +49,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Plans have a length (default 8 weeks) or finish early; verdict by training goal from InBody, lifts, adherence and posture scans ([ADR-019](decisions/ADR-019-plan-length-and-report.md)) | Answers Design.md's "goal reached?" | Open-ended plans |
 | 2026-10-12 | Goals: lift (e1RM) and body (InBody) targets, derived progress and pace ([ADR-018](decisions/ADR-018-goals.md)) | Fits Design.md; feeds History's "goal reached" | Stored progress |
 | 2026-10-12 | Level/XP, rings, stats and badges derived from history, never stored ([ADR-017](decisions/ADR-017-level-stats-badges.md)) | Always consistent, re-tunable | Stored XP ledger |
 | 2026-10-12 | Opt-in AI coach parked by the user; full proposal saved in ideas.md | Costs money and sends data off the phone | Build now |
@@ -70,6 +71,16 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (plan length + end-of-plan report, v0.20.0)
+- **Built** (ADR-019):
+  - plan length chips (4/6/8/12 weeks)
+  - "Week n of N", finished banner and "Finish plan now" on the Plan tab
+  - training goal saved with the plan
+  - History → Plans tab with verdicts
+  - plan report: verdict + basis + "Why?", workouts, main-lift e1RM changes, InBody before → after, posture findings, goals reached
+  - 5 verdict "Why?" entries
+- **Verified:** 253 unit tests ✅ (14 new: window and early finish, every goal's verdict, strength fallback, no-data cases, InBody pairing, posture, goals in window); lint ✅; build ✅; E2E 11/11 ✅ (6-week plan → simulated 7 weeks of training with InBody +0.7 kg muscle and scans 1 → 0 findings → finished banner → "Goal reached" in History → report sections → Why? → Finish plan now → "Not enough data"; no console errors).
 
 ### 2026-10-12 (goals, v0.19.0)
 - **Built** (ADR-018):

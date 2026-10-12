@@ -263,3 +263,15 @@ input::placeholder { color: #4b6478; }
 .goal-strip li { display: grid; gap: 3px; }
 .goal-strip .progress.thin { display: block; }
 .goal-strip .progress.thin > span { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 10px); }
+
+/* Plan report (ADR-019) */
+.verdict-title { font-family: var(--font-title); font-size: 1.25rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.verdict-reached { border-left: 3px solid var(--sev-ok); } .verdict-reached .verdict-title, .verdict-chip.verdict-reached { color: var(--sev-ok); }
+.verdict-partly { border-left: 3px solid var(--sev-mild); } .verdict-partly .verdict-title, .verdict-chip.verdict-partly { color: var(--sev-mild); }
+.verdict-not_reached { border-left: 3px solid var(--sev-marked); } .verdict-not_reached .verdict-title, .verdict-chip.verdict-not_reached { color: var(--sev-marked); }
+.verdict-no_data { border-left: 3px solid var(--muted); } .verdict-no_data .verdict-title, .verdict-chip.verdict-no_data { color: var(--muted); }
+.list-card.card.verdict-reached, .list-card.card.verdict-partly { border-left-width: 1px; }
+.change-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.change-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+.change-list .up { color: var(--sev-ok); } .change-list .down { color: var(--sev-marked); }
+.data { font-family: var(--font-data); }

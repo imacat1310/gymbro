@@ -1,14 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { EXERCISE_BY_ID } from '../data/exercises'
 import { db } from '../db/db'
 import { formatDate, formatDuration } from '../lib/hooks'
 import { fmtKg } from '../lib/progression'
 import { bestE1rm, volumeKg } from '../lib/stats'
+import { usePlanReports } from '../lib/progress/usePlanReports'
+import { VERDICT_LABEL } from '../lib/progress/planReport'
 
 export function HistoryPage() {
-  const [tab, setTab] = useState<'sessions' | 'exercises'>('sessions')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<'sessions' | 'exercises' | 'plans'>(params.get('tab') === 'plans' ? 'plans' : 'sessions')
+  const reports = usePlanReports()
   const data = useLiveQuery(async () => {
     const sessions = await db.sessions.orderBy('startedAt').reverse().filter((s) => !!s.endedAt).toArray()
     const sets = await db.sets.toArray()
@@ -30,7 +34,24 @@ export function HistoryPage() {
       <nav className="tabs">
         <button className={tab === 'sessions' ? 'active' : ''} onClick={() => setTab('sessions')}>Workouts</button>
         <button className={tab === 'exercises' ? 'active' : ''} onClick={() => setTab('exercises')}>Exercises</button>
+        <button className={tab === 'plans' ? 'active' : ''} onClick={() => setTab('plans')}>Plans</button>
       </nav>
+
+      {tab === 'plans' && (
+        <section className="stack">
+          {!reports?.length && <p className="muted">No plans yet. Build one on the Plan tab.</p>}
+          {reports?.map(({ plan, report: r }) => (
+            <Link key={plan.id} to={`/history/plan/${plan.id}`} className="card list-card">
+              <div className="day-head">
+                <strong>{plan.name}</strong>
+                {r.window.finished ? <span className={`sev-chip verdict-chip verdict-${r.verdict}`}>{VERDICT_LABEL[r.verdict]}</span> : <span className="sev-chip">Week {r.window.week} of {r.window.weeks}</span>}
+              </div>
+              <div className="muted small">{formatDate(r.window.start)} – {formatDate(r.window.end)} · {r.workouts.done} workouts</div>
+              <div className="small">{r.basis}</div>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {tab === 'sessions' && (
         <section className="stack">

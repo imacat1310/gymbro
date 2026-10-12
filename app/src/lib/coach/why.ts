@@ -235,6 +235,31 @@ export const WHY = {
     rule: 'Compares your progress with a straight line from the day you set the goal to its deadline. Within 10 percentage points of that line is on track.',
     evidence: 'convention', sources: [],
   },
+  verdict_muscle: {
+    title: 'Did the plan build muscle?',
+    rule: 'Judged by skeletal muscle on InBody, from the result nearest the plan\'s start to the last one by its end: +0.5 kg or more is reached, any gain is partly. Without InBody before and after, strength (main lifts +5%) stands in.',
+    evidence: 'convention', sources: [],
+  },
+  verdict_fat: {
+    title: 'Did the plan lose fat?',
+    rule: 'Judged by InBody body fat percentage from the plan\'s start to its end: 1 percentage point or more down is reached, any drop is partly.',
+    evidence: 'convention', sources: [],
+  },
+  verdict_strength: {
+    title: 'Did the plan build strength?',
+    rule: 'The average change in estimated one-rep max on the plan\'s main lifts, first session vs last: +5% or more is reached, any gain is partly.',
+    evidence: 'convention', sources: [S.epley],
+  },
+  verdict_athletic: {
+    title: 'Did the plan improve performance?',
+    rule: 'Main lifts up 3% or more with at least 70% of planned sessions done is reached; either one on its own is partly.',
+    evidence: 'convention', sources: [],
+  },
+  verdict_general: {
+    title: 'Did the plan keep you fit?',
+    rule: 'For general fitness, showing up is the goal: 75% or more of planned workouts is reached, 50% or more is partly.',
+    evidence: 'convention', sources: [],
+  },
   consistency: {
     title: 'Consistency',
     rule: 'Workouts done this week compared with the days your plan asks for. Showing up consistently matters more than any single session.',

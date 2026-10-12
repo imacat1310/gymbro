@@ -153,6 +153,7 @@ export async function buildAndSavePlan(prefs: PlanPrefs, replaceId?: string): Pr
     bodyDataAt: body?.latestAt,
     pausedSpinal: !!body?.pause,
     dayFocus: dayFocus.some(Boolean) ? dayFocus : undefined,
+    goal: s.profile.goal,
   }
   await db.transaction('rw', db.plans, db.settings, async () => {
     await db.plans.put(stored)
@@ -197,6 +198,9 @@ export async function setDayFocus(planId: string, dayIndex: number, focus: Focus
   dayFocus[dayIndex] = focus
   await buildAndSavePlan({ name: plan.name, schedule: plan.schedule, priorities: plan.priorities, dayFocus }, plan.id)
 }
+
+/** End a plan early; its report then compares its start with today. */
+export const finishPlan = (id: string) => db.plans.update(id, { finishedAt: Date.now() })
 
 export const renamePlan = (id: string, name: string) =>
   db.plans.update(id, { name: name.trim() || 'My plan', updatedAt: Date.now() })

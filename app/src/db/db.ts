@@ -8,7 +8,7 @@ import type { InBodyField, InBodyValues } from '../lib/inbody'
 import type { TrunkResult } from '../lib/trunk'
 import type { FocusId } from '../lib/focus'
 import type { Plan } from '../lib/planner'
-import type { Profile, Target } from '../lib/targets'
+import type { Goal as TrainingGoal, Profile, Target } from '../lib/targets'
 
 export interface Gym {
   id: string
@@ -20,6 +20,8 @@ export interface Gym {
 export interface Schedule {
   daysPerWeek: number
   sessionMinutes: number
+  /** Plan length in weeks (ADR-019); 8 when not set. */
+  weeks?: number
 }
 
 export interface Settings {
@@ -55,6 +57,10 @@ export interface StoredPlan extends Plan {
   pausedSpinal?: boolean
   /** Session focus per day (a sport or quality); kept across rebuilds (ADR-015). */
   dayFocus?: (FocusId | null)[]
+  /** Set when the user finishes the plan early (ADR-019); otherwise it ends after `schedule.weeks`. */
+  finishedAt?: number
+  /** Training goal when the plan was built, for its end-of-plan verdict. */
+  goal?: TrainingGoal
 }
 
 /** One exercise slot inside a session. */

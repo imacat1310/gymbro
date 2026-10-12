@@ -2,6 +2,7 @@ import type { Muscle } from '../data/exercises'
 import { AREA_LABELS, type Area } from '../data/stress'
 import type { Schedule } from '../db/db'
 import { muscleLabel, PRIORITY_CHOICES } from '../lib/planner'
+import { DEFAULT_WEEKS, PLAN_WEEK_CHOICES } from '../lib/progress/planReport'
 
 const DAYS = [2, 3, 4, 5, 6]
 const MINUTES = [30, 45, 60, 75, 90]
@@ -26,6 +27,18 @@ export function PlanSetup({ schedule, limitations, priorities, onChange }: Props
             <button key={d} type="button" className={`chip ${schedule.daysPerWeek === d ? 'on' : ''}`} aria-pressed={schedule.daysPerWeek === d}
               onClick={() => onChange({ schedule: { ...schedule, daysPerWeek: d } })}>{d}</button>
           ))}
+        </div>
+      </fieldset>
+      <fieldset className="choice">
+        <legend>Plan length (weeks)</legend>
+        <div className="chips">
+          {PLAN_WEEK_CHOICES.map((w) => {
+            const on = (schedule.weeks ?? DEFAULT_WEEKS) === w
+            return (
+              <button key={w} type="button" className={`chip ${on ? 'on' : ''}`} aria-pressed={on}
+                onClick={() => onChange({ schedule: { ...schedule, weeks: w } })}>{w}</button>
+            )
+          })}
         </div>
       </fieldset>
       <fieldset className="choice">
