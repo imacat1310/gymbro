@@ -66,5 +66,5 @@ performable(gym) = { e ∈ Exercise | ∃ group g in requirements(e): g ⊆ equi
 ## Acceptance criteria
 - [ ] ≥ 90% precision / ≥ 85% recall on a 30-gym test set for top-level equipment
 - [ ] Scan → review in < 20 s for 15 photos
-- [ ] The user can fully correct the list manually
-- [ ] Exercise count and list update live as equipment is toggled
+- [x] The user can fully correct the list manually (gym tour + list, ADR-021)
+- [x] Exercise count and list update live as equipment is toggled

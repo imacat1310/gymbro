@@ -283,3 +283,19 @@ input::placeholder { color: #4b6478; }
 .sev-chip.sev-none { color: var(--sev-ok); }
 .trend-improved, .trend-resolved { color: var(--sev-ok); } .trend-worse, .trend-new { color: var(--sev-mild); } .trend-same, .trend-none { color: var(--muted); }
 .test-link.featured { border-color: var(--accent-deep); background: var(--accent-soft); }
+
+/* Gym tour (ADR-021) */
+.tour-progress { display: flex; gap: 4px; }
+.tour-progress span { flex: 1; height: 4px; background: rgba(34, 211, 238, 0.12); }
+.tour-progress span.on { background: var(--accent); box-shadow: 0 0 6px rgba(34, 211, 238, 0.6); }
+.tour-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tour-tile { clip-path: none; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 72px; padding: 10px; text-align: left; text-transform: none; letter-spacing: normal; font-family: var(--font-body); font-size: 0.9rem; background: rgba(34, 211, 238, 0.04); color: var(--text); border: 1px solid var(--border); border-radius: 2px; }
+.tour-tile.on { border-color: var(--accent); background: var(--accent-soft); }
+.tour-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tour-item { clip-path: none; width: 100%; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px; text-align: left; text-transform: none; letter-spacing: normal; font-family: var(--font-body); font-size: 0.95rem; background: rgba(34, 211, 238, 0.03); color: var(--text); border: 1px solid var(--border); border-radius: 2px; min-height: 60px; }
+.tour-item.on { border-color: var(--accent); background: var(--accent-soft); }
+.tour-check { width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--hud-dim); color: var(--accent-hi); font-weight: 700; }
+.tour-item.on .tour-check { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.tour-text { display: flex; flex-direction: column; gap: 2px; }
+.tour-gain { color: var(--sev-ok); font-size: 0.85rem; }
+.chip-gain { color: var(--sev-ok); font-family: var(--font-data); font-size: 0.8rem; }

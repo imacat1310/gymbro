@@ -1,21 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router'
 import { EquipmentEditor } from '../components/EquipmentEditor'
-import { GYM_PRESETS } from '../data/equipment'
 import { db } from '../db/db'
-import { createGym, deleteGym, saveSettings } from '../db/repo'
+import { deleteGym, saveSettings } from '../db/repo'
 import { useActiveGym } from '../lib/hooks'
 
 export function GymPage() {
   const gym = useActiveGym()
   const gyms = useLiveQuery(() => db.gyms.toCollection().sortBy('createdAt'), [])
-
-  async function addGym() {
-    const name = prompt('Name of the new gym', 'Hotel gym')?.trim()
-    if (!name) return
-    const created = await createGym(name, GYM_PRESETS[0].equipment)
-    await saveSettings({ activeGymId: created.id })
-  }
 
   return (
     <div className="page">
@@ -41,9 +33,10 @@ export function GymPage() {
               if (name && name !== gym.name) void db.gyms.update(gym.id, { name })
             }} />
           </label>
+          <Link to={`/gym/setup?id=${gym.id}`} className="button">Walk through the gym</Link>
           <div className="card-callout">
-            <strong>Equipment scan</strong>
-            <p className="muted small">Scanning the gym with your camera arrives in Phase 2. For now, tap to select what's there.</p>
+            <strong>Camera scan</strong>
+            <p className="muted small">Recognising equipment from photos needs an AI service, which isn't switched on yet. The walk-through or the list below is the quick way for now.</p>
           </div>
           <EquipmentEditor equipment={gym.equipment} onChange={(equipment) => void db.gyms.update(gym.id, { equipment })} />
           <Link to="/library" className="button secondary">Browse available exercises</Link>
@@ -53,7 +46,7 @@ export function GymPage() {
       )}
 
       <div className="row">
-        <button className="secondary" onClick={addGym}>+ Add another gym</button>
+        <Link to="/gym/setup" className="button secondary">+ Add another gym</Link>
         {gym && gyms && gyms.length > 1 && (
           <button className="danger" onClick={() => confirm(`Delete "${gym.name}"? Workout history is kept.`) && void deleteGym(gym.id)}>Delete this gym</button>
         )}

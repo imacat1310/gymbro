@@ -18,11 +18,10 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Full body report (v0.22.0): Profile → Full body report
-- Next (Design.md, last item): faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
+- Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
+- Opt-in AI coach and camera scan parked on the AI-provider decision (ideas.md "Pending decision")
 
 **Next**
-- Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
 - Movement tests, left vs right, then the imbalance engine (features/08)
 
 **Waiting on you**
@@ -49,6 +48,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | React + TS + Vite + vite-plugin-pwa ([ADR-002](decisions/ADR-002-ui-framework.md)) | Best ecosystem for MediaPipe, Supabase, Capacitor | Svelte 5, Vue 3 |
 | 2026-10-08 | Node via Homebrew; app code in `app/` | Simplest; Homebrew already present | fnm, official installer |
 | 2026-10-08 | Public GitHub repo + GitHub Pages ([ADR-003](decisions/ADR-003-hosting-and-repo.md)) | One account, free, stable HTTPS | Private repo + Netlify, Pages with GitHub Pro, Cloudflare tunnel, mkcert |
+| 2026-10-12 | Faster manual gym setup: guided tour, hints, search, unlock badges ([ADR-021](decisions/ADR-021-faster-manual-gym-setup.md)) | Design.md Gym item while the camera scan waits | Search only; camera scan now |
 | 2026-10-12 | Full body report: one derived page for posture, InBody, left/right, trunk test, with scan-to-scan trends and a combined training focus ([ADR-020](decisions/ADR-020-full-body-report.md)) | Design.md Profile item | Separate pages only |
 | 2026-10-12 | Posture scan: optional right-side view, both sides averaged, tentative shoulder-depth finding (ADR-009 rev. 1) | User asked whether the right side is needed | Left only |
 | 2026-10-12 | Plans have a length (default 8 weeks) or finish early; verdict by training goal from InBody, lifts, adherence and posture scans ([ADR-019](decisions/ADR-019-plan-length-and-report.md)) | Answers Design.md's "goal reached?" | Open-ended plans |
@@ -73,6 +73,13 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (faster manual gym setup, v0.23.0)
+- **Built** (ADR-021):
+  - Gym tour (`#/gym/setup`) for new gyms and "Walk through the gym" on existing ones: name + gym type, one area per step with hints and All / None, review with exercise count and "did you miss" suggestions
+  - Gym tab list: search (name or hint), "+N" unlock badges on missing items, biggest-unlocks line
+  - "+ Add another gym" uses the tour; camera-scan note now says it waits on the AI service decision
+- **Verified:** 272 unit tests ✅ (6 new: hints, unlock counts, top unlocks, search); lint ✅; build ✅; E2E 14/14 ✅ (search, badges, tour All/None, save as active gym, re-check, no console errors).
 
 ### 2026-10-12 (full body report, v0.22.0)
 - **Built** (ADR-020): Profile → Full body report:

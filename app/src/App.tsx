@@ -22,6 +22,7 @@ const PoseTest = lazy(() => import('./components/PoseTest').then((m) => ({ defau
 const BodyPage = lazy(() => import('./pages/BodyPage').then((m) => ({ default: m.BodyPage })))
 const PosturePage = lazy(() => import('./pages/PosturePage').then((m) => ({ default: m.PosturePage })))
 const ImbalancePage = lazy(() => import('./pages/ImbalancePage').then((m) => ({ default: m.ImbalancePage })))
+const GymTourPage = lazy(() => import('./pages/GymTourPage').then((m) => ({ default: m.GymTourPage })))
 const BodyReportPage = lazy(() => import('./pages/BodyReportPage').then((m) => ({ default: m.BodyReportPage })))
 const PlanReportPage = lazy(() => import('./pages/PlanReportPage').then((m) => ({ default: m.PlanReportPage })))
 const GoalsPage = lazy(() => import('./pages/GoalsPage').then((m) => ({ default: m.GoalsPage })))
@@ -90,6 +91,7 @@ function App() {
         <Route path="history/plan/:id" element={<PlanReportPage />} />
         <Route path="exercise/:id" element={<ExercisePage />} />
         <Route path="gym" element={<GymPage />} />
+        <Route path="gym/setup" element={<GymTourPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="profile/device" element={<Wrap title="Device check"><DeviceCheck /></Wrap>} />
