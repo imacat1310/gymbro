@@ -19,7 +19,14 @@ export default defineConfig({
   },
   projects: [
     { name: 'iphone-webkit', use: { ...devices['iPhone 15'] } },
-    { name: 'android-chromium', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'android-chromium',
+      use: {
+        ...devices['Pixel 7'],
+        // A fake camera for the pose tests (e2e/assets.e2e.ts); harmless for the others.
+        launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+      },
+    },
   ],
   // Production build served like GitHub Pages (under /gymbro/), including the service worker.
   webServer: {

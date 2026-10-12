@@ -229,7 +229,7 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
             if (left !== lastCount && left > 0) {
               lastCount = left
               setCount(left)
-              beep(1)
+              void beep(1)
             }
             if (ok && now - countdownStart >= COUNTDOWN_MS) {
               burstRef.current = { frames: [], tilt, lastAt: 0 }
@@ -306,7 +306,7 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
     burstRef.current = { frames: [], tilt: null, lastAt: 0 }
     setReview({ canvas: shown, capture, tracked: poses.length })
     setPhase('review')
-    beep(2)
+    void beep(2)
     say('Got it. Check the photo.')
   }
 

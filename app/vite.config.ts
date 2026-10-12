@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { MEDIAPIPE_VERSION, OCR_CACHE, OCR_VERSION, POSE_CACHE } from './scripts/asset-versions.mjs'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -31,22 +32,23 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Pose and OCR runtimes + models are large: cache on first use instead of at install.
+        // Cache names carry the library versions; lib/assetCaches.ts deletes outdated ones at startup.
         globIgnores: ['mediapipe/**', 'models/**', 'ocr/**'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => /\/ocr\//.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'ocr-assets',
+              cacheName: OCR_CACHE,
               expiration: { maxEntries: 10 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
-            urlPattern: ({ url }) => /\/(mediapipe\/wasm|models)\//.test(url.pathname),
+            urlPattern: ({ url }) => /\/(mediapipe|models)\//.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'pose-assets',
+              cacheName: POSE_CACHE,
               expiration: { maxEntries: 10 },
               cacheableResponse: { statuses: [0, 200] },
             },
@@ -55,6 +57,12 @@ export default defineConfig({
       },
     }),
   ],
-  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    __MEDIAPIPE_VERSION__: JSON.stringify(MEDIAPIPE_VERSION),
+    __OCR_VERSION__: JSON.stringify(OCR_VERSION),
+    __POSE_CACHE__: JSON.stringify(POSE_CACHE),
+    __OCR_CACHE__: JSON.stringify(OCR_CACHE),
+  },
   server: { host: true },
 })

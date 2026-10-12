@@ -18,7 +18,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Developer review fixes: step 1 (v0.24.0) and step 2 (v0.24.1, E2E in CI) done. Next: versioned pose/OCR caches, iPhone rest beep
+- Developer review fixes: steps 1–3 done (v0.24.0–v0.24.2). Next candidates: offline pre-download of pose/OCR, performance (whole-table queries, workout re-render), accessibility (contrast, tap targets, focus ring)
 - InBody: kept as is (user, 2026-10-13); options parked in ideas.md #19
 - Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
 - Opt-in AI coach and camera scan parked on the AI-provider decision (ideas.md "Pending decision")
@@ -44,6 +44,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 | Date | Decision | Why | Alternatives considered |
 |---|---|---|---|
+| 2026-10-13 | Pose/OCR runtimes at versioned URLs + versioned cache names; outdated caches deleted at startup | A library upgrade can't mix new code with old cached files; no stale tens-of-MB caches | Version in path only (old caches never freed), custom service worker |
 | 2026-10-13 | Playwright E2E (WebKit at iPhone size + Chromium at Android size), run in CI before deploy | WebKit is Safari's engine; runs in CI; standard | Puppeteer + local Edge (no CI, Chromium only), Vitest-only flow test (no real screens) |
 | 2026-10-08 | Rules engine decides plans and progression; AI only for perception and explanations | Deterministic, testable, safe | End-to-end LLM planning |
 | 2026-10-08 | Pose estimation on-device; raw body media not uploaded by default | Privacy, latency, cost | Server-side video analysis |
@@ -76,6 +77,14 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-13 (developer review, step 3: versioned runtimes + iPhone rest beep, v0.24.2)
+- **Versioned runtimes:** `scripts/asset-versions.mjs` is the single source for the MediaPipe and Tesseract versions (plus a hash of the committed pose models). Files ship at `mediapipe/<version>/wasm/` and `ocr/<version>/`; the copy scripts rebuild those folders, so old versions never ship. Service-worker caches are named `pose-assets-<version>-<models hash>` and `ocr-assets-<version>`. `lib/assetCaches.ts` deletes outdated or unversioned ones at startup.
+- **Caught before shipping:** the pose cache rule matched `/mediapipe/wasm/`, which the new path no longer contains, so the runtime would have silently stopped being cached for offline use. The rule now matches `/mediapipe/`.
+- **Rest beep on iPhone:** `beep()` resumes a suspended or iOS-"interrupted" audio context before playing (it used to stay silent unless audio was already running). The context is re-woken on return to the app and on any tap. The Audio Session is set to `transient` (Safari 17+), so the beep mixes with music instead of stopping it.
+- **Accessibility (from the review):** the rest bar no longer has `aria-live` on a per-second countdown; a hidden status announces "Rest over" once.
+- **Tests:** unit 290 ✅ (new: alerts with a fake AudioContext covering the iPhone "interrupted" state; cache-name pruning). E2E: old caches deleted at startup (WebKit + Chromium); pose WASM and model load from versioned paths (Chromium with a fake camera; WebKit can't fake one, so it's skipped there). Mutation checks: the old beep fails the lock-screen test; disabling pruning fails the E2E.
+- **Not verified on a real iPhone:** whether the beep plays with the ring/silent switch on silent. iOS may still mute web audio; the visual "Go!" flash remains the reliable cue.
 
 ### 2026-10-13 (developer review, step 2: end-to-end tests, v0.24.1)
 - **Playwright** (`app/e2e/*.e2e.ts`, `npm run e2e`), in WebKit (iPhone 15) and Chromium (Pixel 7), against the production build served under `/gymbro/`. Added to the deploy workflow after the unit tests, so a broken core loop never publishes.

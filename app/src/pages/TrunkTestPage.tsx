@@ -91,7 +91,7 @@ export function TrunkTestPage() {
       if ('offset' in r) {
         setOffset(r.offset)
         setCalMsg('')
-        beep(1)
+        void beep(1)
         setStep('upper')
         resetPeak()
       } else {
@@ -107,7 +107,7 @@ export function TrunkTestPage() {
     const next = { ...regions, [region]: Math.round(peak * 10) / 10 }
     setRegions(next)
     resetPeak()
-    beep(1)
+    void beep(1)
     if (region === 'upper') setStep('lower')
     else {
       const id = await saveAssessment({ type: 'trunk_rotation', takenAt: Date.now(), trunk: { regions: next, offsetDeg: Math.round(offset * 10) / 10 } })

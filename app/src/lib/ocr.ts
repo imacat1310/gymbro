@@ -66,7 +66,7 @@ export interface OcrResult {
 export async function readSheet(file: Blob, onProgress: (stage: OcrStage, progress: number) => void, modes: PageMode[] = ['11', '3']): Promise<OcrResult[]> {
   onProgress('loading', 0)
   const [{ createWorker, OEM }, image] = await Promise.all([import('tesseract.js'), preparePhoto(file)])
-  const base = new URL(`${import.meta.env.BASE_URL}ocr/`, location.href).href
+  const base = new URL(`${import.meta.env.BASE_URL}ocr/${__OCR_VERSION__}/`, location.href).href
   let pass = 0
   const worker = await createWorker('eng', OEM.LSTM_ONLY, {
     workerPath: `${base}worker.min.js`,
@@ -109,7 +109,7 @@ export async function readSheet(file: Blob, onProgress: (stage: OcrStage, progre
 export async function readRegion(image: HTMLCanvasElement, box: { x0: number; y0: number; x1: number; y1: number },
   onProgress: (stage: OcrStage, progress: number) => void, cutoffs = [120, 135, 150], modes: PageMode[] = ['6', '11']): Promise<OcrResult[]> {
   const { createWorker, OEM } = await import('tesseract.js')
-  const base = new URL(`${import.meta.env.BASE_URL}ocr/`, location.href).href
+  const base = new URL(`${import.meta.env.BASE_URL}ocr/${__OCR_VERSION__}/`, location.href).href
   const w = Math.round(box.x1 - box.x0), hgt = Math.round(box.y1 - box.y0)
   const total = cutoffs.length * modes.length
   let done = 0

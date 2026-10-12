@@ -32,7 +32,7 @@ export async function createPoseEngine(model: PoseModel, delegate: Delegate, run
   const t0 = performance.now()
   const vision = await import('@mediapipe/tasks-vision')
   const base = import.meta.env.BASE_URL
-  const fileset = await vision.FilesetResolver.forVisionTasks(`${base}mediapipe/wasm`)
+  const fileset = await vision.FilesetResolver.forVisionTasks(`${base}mediapipe/${__MEDIAPIPE_VERSION__}/wasm`)
   const create = (d: Delegate) => vision.PoseLandmarker.createFromOptions(fileset, {
     baseOptions: { modelAssetPath: `${base}models/pose_landmarker_${model}.task`, delegate: d },
     runningMode,

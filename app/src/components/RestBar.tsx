@@ -15,7 +15,7 @@ export function RestBar({ session }: { session: Session }) {
     if (!endsAt || remaining > 0 || alertedFor.current === endsAt) return
     alertedFor.current = endsAt
     // Back from a long background: skip the alarm, just clear it.
-    if (remaining > -60_000) beep()
+    if (remaining > -60_000) void beep()
     // Not cancelled on re-render: this effect re-runs every tick, and clearing a finished rest is harmless.
     setTimeout(() => void clearRest(session.id, endsAt), remaining > -60_000 ? 3000 : 0)
   }, [endsAt, remaining, session.id])
@@ -26,7 +26,10 @@ export function RestBar({ session }: { session: Session }) {
   const pct = Math.min(100, Math.max(0, (1 - remaining / total) * 100))
 
   return (
-    <div className={`restbar ${flash ? 'flash' : ''} ${remaining <= 0 ? 'done' : ''}`} role="timer" aria-live="polite">
+    // role="timer" is silent by default; only the end of rest is announced (the live region below),
+    // so screen readers don't read the countdown every second.
+    <div className={`restbar ${flash ? 'flash' : ''} ${remaining <= 0 ? 'done' : ''}`} role="timer" aria-label="Rest timer">
+      <span className="sr-only" role="status">{remaining <= 0 ? 'Rest over' : ''}</span>
       <div className="restbar-fill" style={{ width: `${pct}%` }} />
       <div className="restbar-content">
         <span className="restbar-label">{remaining > 0 ? 'Rest' : 'Go!'}</span>

@@ -10,9 +10,12 @@ import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { requestPersistentStorage } from './db/repo'
+import { pruneAssetCaches } from './lib/assetCaches'
 
 // All data lives only on this phone: ask the browser not to evict it.
 void requestPersistentStorage()
+// Free space held by older pose/OCR runtime versions.
+void pruneAssetCaches()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
