@@ -19,7 +19,7 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 
 **Now**
 - Developer review fixes, step 1 done (v0.24.0): data-loss bugs + data safety. Next: committed E2E test of the core loop, versioned pose/OCR caches, iPhone rest beep
-- InBody: decide between quick manual entry, keeping OCR, or vision AI (options in the 2026-10-13 log)
+- InBody: kept as is (user, 2026-10-13); options parked in ideas.md #19
 - Faster manual gym setup (v0.23.0): gym tour, search, unlock badges. Design.md items all done except the camera scan
 - Opt-in AI coach and camera scan parked on the AI-provider decision (ideas.md "Pending decision")
 

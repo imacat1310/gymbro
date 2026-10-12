@@ -8,6 +8,7 @@ Status: 💡 New · 🔍 Evaluating · ✅ Accepted (→ where) · ❌ Rejected 
 
 | # | Date | Idea | Area | Status | Notes |
 |---|---|---|---|---|---|
+| 19 | 2026-10-13 | Better InBody input: quick manual entry (B) now, AI photo reading (C) later; retire on-device OCR | Profile / Data | ⏸ Later: user chose to keep the current scan for now | Options saved below ("Pending decision: InBody input") |
 | 1 | 2026-10-08 | Auto-detect which gym you're at from location and load that gym's equipment | Equipment / Plan | ⏸ Later | Already in Phase 5 |
 | 2 | 2026-10-08 | Count reps with voice ("done", "eight") so you don't touch the phone | Session tracker | 💡 New | |
 | 3 | 2026-10-08 | Apple Watch / Wear OS companion app to log sets and see the rest timer | Session tracker | 💡 New | |
@@ -47,6 +48,24 @@ The user chose to park this; it costs money and sends data off the phone, so the
   4. per-user rate limits / sign-in
 - **Alternatives considered:** an on-device LLM (WebLLM): only iOS 26+ phones, a 0.3–0.7 GB download, weak small models. Revisit in ~12 months. Closed products (Arvo, Jotform): not usable.
 - **Effort:** M, plus an ADR when the user decides.
+
+## Pending decision: InBody input (ideas #19, saved 2026-10-13)
+From the developer review. The user chose to keep the current on-device scan (ADR-008) for now.
+
+**Today:** Tesseract OCR on the phone. Real InBody 270 sheet: 12/14 values right, 0 wrong. Costs 15 MB in the build (~7 MB downloaded on first scan), slow on phones, tuned to one sheet layout.
+
+| | A: Keep OCR (current) | B: Quick manual entry | C: AI reads the photo |
+|---|---|---|---|
+| What | Photo → text recognition on the phone → review | Short form with the numbers that matter (weight, SMM, PBF, fat mass, optional segmental), pre-filled from the last result, ± buttons | Photo → vision model (e.g. Claude) through a small server → review |
+| Accuracy | 12/14 on one sheet; other layouts untested | Exact | Highest across InBody models, languages, glare |
+| Effort per scan | Photo + check values | ~30 s typing | Photo + quick check |
+| Privacy | On the phone | On the phone | Sheet leaves the phone, opt-in only |
+| Cost / upkeep | Free; parser work per new layout | Free; removes 15 MB + 3 modules | ~$0.01/scan; needs backend + API key |
+| Offline | After first use | ✅ | ❌ |
+
+- **Also considered:** InBody app → Apple Health sync. A PWA can't read HealthKit; it needs the Capacitor wrap (ADR-001), with sideloading limits.
+- **Recommendation:** B now, C later. C shares its backend with the equipment scan and the AI coach (#15), so decide the AI provider once for all three.
+- **Revisit when:** the AI-provider decision is made, or OCR misreads real sheets.
 
 ## Areas
 Equipment · Posture scan · Plan · Form check · Session tracker · Diet · Social · Monetization · UX · Infra
