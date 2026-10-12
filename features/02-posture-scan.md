@@ -7,7 +7,7 @@ Photograph the user's posture and detect postural tendencies, left/right asymmet
 
 ## Capture protocol
 Consistent capture is what makes the results usable. The app guides each shot:
-- **Views:** front, left side, back (right side optional).
+- **Views:** front, left side, right side (optional, skippable), back. With both sides, sagittal metrics are averaged and left vs right shoulder depth is compared (ADR-009 rev. 1).
 - **Clothing:** fitted clothing or shorts/sports bra; hair tied up so the neck is visible.
 - **Setup:** phone at hip height, 2.5–3 m away, vertical, level (motion-sensor check: sideways ≤ 2°, forward/back ≤ 5°; see [ADR-006](../decisions/ADR-006-posture-capture.md)). Full body in frame, plain background.
 - **Stance:** relaxed natural standing, feet hip-width, arms by sides, eyes forward. Auto-capture after holding still, with a 3 s beep countdown; 5 frames are analysed with the Full model and the median landmarks kept.

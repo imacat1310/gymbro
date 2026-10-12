@@ -78,7 +78,7 @@ export function ImbalancePage() {
         <h2>Tests</h2>
         <Link to="/profile/posture" className="test-link">
           <b>Posture scan</b>
-          <span className="muted small">Standing photos, front, side and back. Alone. {scans ? `${scans} saved.` : ''}</span>
+          <span className="muted small">Standing photos: front, both sides and back. Alone. {scans ? `${scans} saved.` : ''}</span>
         </Link>
         <Link to="/profile/imbalance/trunk" className="test-link">
           <b>Trunk rotation</b>

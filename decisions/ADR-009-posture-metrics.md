@@ -22,3 +22,10 @@ ADR-006 stores 33 landmarks per view (front, side, back), with no photos. This s
 - **Forward head is under-detected.** The spec's shoulder-based angle with clinical C7 thresholds (50/45/40°) needs the ear about 17 cm in front of the shoulder before flagging. Revisit the thresholds after real scans, or estimate C7.
 - The femur:torso ratio uses joint centres. The "long/short thigh" cut-offs (0.9/0.7) are approximate and only inform exercise choice.
 - Accuracy on real people (test–retest < 15%) is unverified until scans exist from a phone.
+
+## Revision 1 (2026-10-12): optional right-side view
+The user asked whether the scan needs the right side. A side photo sees only its near side, so left-only scans assumed the right side matched.
+- **Capture:** 4 views (front → left side → **right side, skippable** → back).
+- **Analysis:** forward head and rounded shoulders are **averaged** over both sides; knee lock-back reports the **worse** leg. (Forward head was moved out of the "pick the bigger deviation" path, which would have picked the *better* side.)
+- **New finding `shoulder_forward_asymmetry`:** left vs right shoulder depth (cm). Mild/moderate/marked at 2/3/4 cm, a **GymBro convention with no validated cut-off**. Reliability 0.55, and it's **always worded "Possible"**. It feeds correctives (pec stretch, external rotation, Y-raise) and muscle focus (rear delt, lower trap).
+- **Old scans:** unchanged; the report notes "Only one side was scanned…".

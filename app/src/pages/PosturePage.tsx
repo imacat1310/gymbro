@@ -43,7 +43,7 @@ export function PosturePage() {
     <div className="page">
       <header className="page-head">
         <h1>Posture scan</h1>
-        <p className="muted">Beta · three photos: front, side and back</p>
+        <p className="muted">Beta · front, left side, right side (optional) and back</p>
       </header>
 
 

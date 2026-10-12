@@ -36,6 +36,7 @@ const CORRECTIVES: Record<FindingCode, string[]> = {
   knee_valgus_static: ['banded_lateral_walk', 'glute_bridge'],
   knee_varus_static: [],
   knee_hyperextension: ['glute_bridge'],
+  shoulder_forward_asymmetry: ['doorway_pec_stretch', 'band_external_rotation', 'prone_y_raise'],
 }
 /** Symmetric core work after a trunk-rotation reading in the re-test band (ADR-010: no side-specific advice). */
 const TRUNK_CORRECTIVES = ['pallof_press', 'bird_dog', 'side_plank']

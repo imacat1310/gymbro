@@ -43,7 +43,7 @@ export function ProfilePage() {
         </Link>
         <Link to="/profile/posture" className="test-link">
           <b>Posture scan</b>
-          <span className="muted small">{scans ? `${scans} saved · ` : ''}Front, side and back photos; only body points are kept.</span>
+          <span className="muted small">{scans ? `${scans} saved · ` : ''}Front, both sides and back; only body points are kept.</span>
         </Link>
         <Link to="/profile/imbalance" className="test-link">
           <b>Imbalance tests</b>

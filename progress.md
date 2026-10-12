@@ -18,8 +18,8 @@ Legend: ⬜ Not started · 🟨 In progress · ✅ Done · ⛔ Blocked
 ## Now / Next / Blocked
 
 **Now**
-- Plan reports (v0.20.0): plan length + "Finish plan now"; History → Plans with verdicts; plan report
-- Next (Design.md): Profile full body report, then faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
+- Posture scan right side (v0.21.0): optional 4th view; left vs right shoulder depth
+- Next: Profile full body report (now), then faster manual gym setup; opt-in AI coach parked (ideas.md "Pending decision")
 
 **Next**
 - Plan day goals + references → History plan outcome → Profile full body report → faster manual gym setup
@@ -71,6 +71,17 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 | 2026-10-08 | *Autonomous:* HashRouter, Dexie, hand-curated exercise DB, Vitest, kg storage ([ADR-004](decisions/ADR-004-phase1-app-structure.md)) | Small and reversible; recommendation taken per the rule | BrowserRouter, raw IndexedDB, free-exercise-db import |
 
 ## Log
+
+### 2026-10-12 (posture scan: optional right side, v0.21.0)
+- **User asked** whether the scan needs the right side. Answer: front and back already compare left and right heights, but the side view sees only its near side. The right side adds sagittal left/right differences and steadier numbers. The user chose to add it.
+- **Built** (ADR-009 rev. 1):
+  - 4-view capture with Skip on the right side
+  - both sides averaged (forward head, rounded shoulders), worse knee for lock-back
+  - new tentative "one shoulder further forward" finding (2/3/4 cm convention, always "Possible") feeding correctives
+  - report diagram with left and right side figures
+  - old scans unchanged, with a note
+- **Fixed during work:** forward head would have picked the better side; the new finding showed as definite (now always "Possible", as promised).
+- **Verified:** 259 unit tests ✅ (6 new, using a right-side camera projection in the fixture); lint ✅; build ✅; E2E 7/7 ✅ (1/4 → 2/4 Left side; seeded 4-view report: three figures, "Possible: One shoulder further forward (right)", no one-side note, corrective reaches the plan input, no errors). Live capture of a real right side is still untested headless.
 
 ### 2026-10-12 (plan length + end-of-plan report, v0.20.0)
 - **Built** (ADR-019):

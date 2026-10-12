@@ -33,12 +33,13 @@ export function body(): Body {
   return { pts }
 }
 
-export type View = 'front' | 'back' | 'side'
+export type View = 'front' | 'back' | 'side' | 'side_right'
 /** Project to normalized landmarks. Side view: the left side faces the camera, facing image +x. */
 export function project(b: Body, view: View, opts: { rotateDeg?: number; vis?: number } = {}): Landmark[] {
   const t = ((opts.rotateDeg ?? 0) * Math.PI) / 180
   return b.pts.map((p, i) => {
-    const xc = view === 'front' ? p.x : view === 'back' ? -p.x : p.f
+    // Left side view: the person faces image +x. Right side view: they face image −x.
+    const xc = view === 'front' ? p.x : view === 'back' ? -p.x : view === 'side' ? p.f : -p.f
     let x = W / 2 + xc * S, y = FLOOR - p.y * S
     // Simulate a tilted phone: the image is rotated by −t around its centre.
     if (t) {
@@ -46,7 +47,7 @@ export function project(b: Body, view: View, opts: { rotateDeg?: number; vis?: n
       x = W / 2 + dx * Math.cos(-t) - dy * Math.sin(-t)
       y = HPX / 2 + dx * Math.sin(-t) + dy * Math.cos(-t)
     }
-    const farSide = view === 'side' && [8, 12, 14, 16, 24, 26, 28, 30, 32].includes(i)
+    const farSide = (view === 'side' && [8, 12, 14, 16, 24, 26, 28, 30, 32].includes(i)) || (view === 'side_right' && [7, 11, 13, 15, 23, 25, 27, 29, 31].includes(i))
     return { x: x / W, y: y / HPX, z: 0, visibility: farSide ? 0.3 : (opts.vis ?? 0.95) }
   })
 }

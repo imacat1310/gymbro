@@ -76,7 +76,7 @@ export function PostureReportPage() {
 
       {flagged.map((f) => {
         const info = FINDING_INFO[f.code]
-        const possible = f.confidence < SHOW_AS_POSSIBLE
+        const possible = f.confidence < SHOW_AS_POSSIBLE || !!info.tentative
         return (
           <section key={f.code} className="card stack finding">
             <div className="day-head">
@@ -154,12 +154,14 @@ function BodyDiagram({ scan, findings }: { scan: PostureScan; findings: Finding[
       ],
     })
   }
-  if (scan.views.side) {
+  for (const [key, label] of [['side', 'Left side'], ['side_right', 'Right side']] as const) {
+    const cap = scan.views[key]
+    if (!cap) continue
     figures.push({
-      key: 'side', label: 'Side', cap: scan.views.side, plumb: true,
+      key, label, cap, plumb: true,
       markers: [
         [[LM.leftEar, LM.rightEar], sev('forward_head')],
-        [[LM.leftShoulder, LM.rightShoulder], sev('rounded_shoulders')],
+        [[LM.leftShoulder, LM.rightShoulder], sev(['rounded_shoulders', 'shoulder_forward_asymmetry'])],
         [[LM.leftKnee, LM.rightKnee], sev('knee_hyperextension')],
       ],
     })
@@ -188,10 +190,10 @@ function BodyDiagram({ scan, findings }: { scan: PostureScan; findings: Finding[
                 return <line className="plumb" x1={a.x} y1={minY} x2={a.x} y2={maxY} />
               })()}
               <circle className="bone-head" cx={head.x} cy={head.y} r={headR} />
-              {BONES.filter(([a, b]) => key !== 'side' || (pts[a].v > 0.4 && pts[b].v > 0.4)).map(([a, b]) => (
+              {BONES.filter(([a, b]) => !plumb || (pts[a].v > 0.4 && pts[b].v > 0.4)).map(([a, b]) => (
                 <line key={`${a}-${b}`} className="bone" x1={pts[a].x} y1={pts[a].y} x2={pts[b].x} y2={pts[b].y} />
               ))}
-              {markers.flatMap(([ids, s]) => (key === 'side' ? [near(ids[0], ids[1])] : ids).map((i) => (
+              {markers.flatMap(([ids, s]) => (plumb ? [near(ids[0], ids[1])] : ids).map((i) => (
                 <circle key={`${i}`} className={`marker sev-${s}`} cx={pts[i].x} cy={pts[i].y} r={h * 0.018} />
               )))}
             </svg>

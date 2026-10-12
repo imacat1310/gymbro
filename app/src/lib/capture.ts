@@ -3,12 +3,17 @@
 import type { Landmark, NormalizedLandmark } from '@mediapipe/tasks-vision'
 import { LM } from './pose'
 
-export type PostureView = 'front' | 'side' | 'back'
+/** 'side' is the left side facing the camera (the original side view); 'side_right' was added later and is optional. */
+export type PostureView = 'front' | 'side' | 'side_right' | 'back'
 
-export const VIEW_ORDER: PostureView[] = ['front', 'side', 'back']
+export const VIEW_ORDER: PostureView[] = ['front', 'side', 'side_right', 'back']
+/** Views the user may skip during capture. */
+export const OPTIONAL_VIEWS: PostureView[] = ['side_right']
+export const isSideView = (v: PostureView) => v === 'side' || v === 'side_right'
 export const VIEW_LABELS: Record<PostureView, { title: string; instruction: string }> = {
   front: { title: 'Front', instruction: 'Face the camera' },
-  side: { title: 'Side', instruction: 'Turn so your left side faces the camera' },
+  side: { title: 'Left side', instruction: 'Turn so your left side faces the camera' },
+  side_right: { title: 'Right side', instruction: 'Turn so your right side faces the camera' },
   back: { title: 'Back', instruction: 'Turn your back to the camera' },
 }
 
@@ -129,12 +134,12 @@ export function evaluateFrame({ lms, width, height, view, tilt, brightness }: Fr
   checks.unshift({ id: 'person', ok: true, label: 'Body found' })
 
   const ratio = shoulderRatio(lms, width, height)
-  const turnedOk = view === 'side' ? ratio <= LIMITS.maxSideRatio : ratio >= LIMITS.minFrontRatio
+  const turnedOk = isSideView(view) ? ratio <= LIMITS.maxSideRatio : ratio >= LIMITS.minFrontRatio
   checks.push({ id: 'turn', ok: turnedOk, label: VIEW_LABELS[view].instruction, hint: turnedOk ? undefined : VIEW_LABELS[view].instruction })
 
   // Side-on, the far side is hidden, so only one landmark of each pair has to be seen.
   const seen = (i: number) => lms[i].visibility >= LIMITS.minVisibility
-  const visible = PAIRS.every(([l, r]) => (view === 'side' ? seen(l) || seen(r) : seen(l) && seen(r)))
+  const visible = PAIRS.every(([l, r]) => (isSideView(view) ? seen(l) || seen(r) : seen(l) && seen(r)))
   const { crown, feet, span } = bodyExtent(lms)
   const xs = [...PAIRS.flat(), LM.nose].map((i) => lms[i].x)
   const inFrame = crown >= LIMITS.edge && feet <= 1 - LIMITS.edge && Math.min(...xs) >= LIMITS.edge && Math.max(...xs) <= 1 - LIMITS.edge
@@ -156,7 +161,7 @@ export function evaluateFrame({ lms, width, height, view, tilt, brightness }: Fr
   const centreOk = Math.abs(off) <= LIMITS.centreBand
   let centreHint: string | undefined
   if (!centreOk) {
-    if (view === 'side') centreHint = 'Move to the middle of the picture'
+    if (isSideView(view)) centreHint = 'Move to the middle of the picture'
     else {
       const towardsHighX = view === 'front' ? 'right' : 'left'
       const towardsLowX = view === 'front' ? 'left' : 'right'
@@ -168,7 +173,7 @@ export function evaluateFrame({ lms, width, height, view, tilt, brightness }: Fr
   const torsoTop = mid(lms[LM.leftShoulder], lms[LM.rightShoulder]).y
   const torsoBottom = mid(lms[LM.leftHip], lms[LM.rightHip]).y
   const wristLine = torsoTop + 0.7 * (torsoBottom - torsoTop)
-  const wrists = [LM.leftWrist, LM.rightWrist].filter((i) => view !== 'side' || seen(i))
+  const wrists = [LM.leftWrist, LM.rightWrist].filter((i) => !isSideView(view) || seen(i))
   const armsOk = wrists.every((i) => lms[i].y >= wristLine)
   checks.push({ id: 'arms', ok: armsOk, label: 'Arms down', hint: armsOk ? undefined : 'Let your arms hang by your sides' })
 

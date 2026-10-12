@@ -7,7 +7,7 @@ import type { ViewCapture } from '../db/db'
 import { beep, speak } from '../lib/alerts'
 import {
   bodyExtent, evaluateFrame, firstHint, isStill, landmarkSpread, medianLandmarks, motionPoints, nearSide,
-  readyToCapture, tiltFromGravity, VIEW_LABELS, VIEW_ORDER, type Check, type MotionSample, type PostureView, type Tilt,
+  isSideView, OPTIONAL_VIEWS, readyToCapture, tiltFromGravity, VIEW_LABELS, VIEW_ORDER, type Check, type MotionSample, type PostureView, type Tilt,
 } from '../lib/capture'
 import { useWakeLock } from '../lib/hooks'
 import { createPoseEngine, type PoseEngine } from '../lib/pose'
@@ -295,7 +295,7 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
       tilt: tilt && { rollDeg: Math.round(tilt.rollDeg * 10) / 10, pitchDeg: Math.round(tilt.pitchDeg * 10) / 10 },
       frames: poses.length,
       spread: landmarkSpread(poses.map((p) => p.lms), landmarks),
-      ...(viewRef.current === 'side' ? { nearSide: nearSide(landmarks) } : {}),
+      ...(isSideView(viewRef.current) ? { nearSide: nearSide(landmarks) } : {}),
     }
 
     // The middle frame, with the Full-model skeleton, is shown for review and then discarded.
@@ -326,6 +326,16 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
     if (!review) return
     resultsRef.current = { ...resultsRef.current, [viewRef.current]: review.capture }
     setReview(null)
+    advance()
+  }
+
+  /** Optional views (the right side) can be skipped; the report then uses the left side only. */
+  function skip() {
+    setReview(null)
+    advance()
+  }
+
+  function advance() {
     const next = viewIdx + 1
     if (next >= VIEW_ORDER.length) {
       say('All done.')
@@ -374,6 +384,9 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
         {(phase === 'live' || phase === 'countdown') && (
           <>
             <p className="capture-hint" aria-live="polite">{hint || 'Looking good'}</p>
+            {OPTIONAL_VIEWS.includes(view) && (
+              <button className="ghost small" onClick={skip}>Skip {VIEW_LABELS[view].title.toLowerCase()} (optional)</button>
+            )}
             <ul className="capture-checks">
               {checks.map((c) => (
                 <li key={c.id} className={c.ok ? 'ok' : c.soft ? 'soft' : 'bad'}>

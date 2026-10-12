@@ -24,9 +24,9 @@ describe('analyzeScan: a well-aligned person', () => {
   it('measures all nine metric families (valgus/varus merged)', () => {
     expect(r.findings.map((f) => f.code).sort()).toHaveLength(8)
   })
-  it('no referral and no notes', () => {
+  it('no referral; the only note asks for the right side', () => {
     expect(r.referral).toBeUndefined()
-    expect(r.notes).toEqual([])
+    expect(r.notes).toEqual([expect.stringMatching(/Only one side was scanned/)])
   })
   it('proportions: femur/torso and shoulder/hip', () => {
     // Thigh 0.24 H vs torso 0.30 H; shoulders 40 cm vs hips 20 cm apart.
@@ -179,5 +179,45 @@ describe('muscleFocus', () => {
     const trained = new Set(EXERCISES.flatMap((e) => [...e.primary, ...e.secondary]))
     const all = muscleFocus((['forward_head', 'rounded_shoulders', 'shoulder_height_asymmetry', 'pelvic_height_asymmetry', 'lateral_trunk_shift', 'head_tilt', 'knee_valgus_static', 'knee_varus_static', 'knee_hyperextension'] as FindingCode[]).map((c) => F(c, 'moderate')))
     expect(all.strengthen.filter((m) => !trained.has(m.muscle)).map((m) => m.muscle)).toEqual([])
+  })
+})
+
+describe('right side view (optional 4th view)', () => {
+  const four = (b: ReturnType<typeof body>) => scan(b, { views: ['front', 'side', 'side_right', 'back'] })
+
+  it('a symmetric person: no shoulder asymmetry, both sides used', () => {
+    const r = analyzeScan(four(body()))
+    const a = find(r.findings, 'shoulder_forward_asymmetry')!
+    expect(a.severity).toBe('none')
+    expect(find(r.findings, 'rounded_shoulders')!.views).toEqual(['side', 'side_right'])
+    expect(r.notes).toEqual([])
+  })
+  it('right shoulder 3.5 cm further forward → possible asymmetry on the right', () => {
+    const b = body(); b.pts[LM.rightShoulder].f += 3.5
+    const a = find(analyzeScan(four(b)).findings, 'shoulder_forward_asymmetry')!
+    expect(a).toMatchObject({ side: 'right', severity: 'moderate' })
+    expect(a.value).toBeCloseTo(3.5, 1)
+    expect(a.confidence).toBeLessThanOrEqual(0.55)
+  })
+  it('rounded shoulders average both sides', () => {
+    const b = body(); b.pts[LM.leftShoulder].f += 4; b.pts[LM.rightShoulder].f += 2
+    expect(find(analyzeScan(four(b)).findings, 'rounded_shoulders')!.value).toBeCloseTo(3, 1)
+  })
+  it('knee lock-back reports the worse leg', () => {
+    const b = body(); b.pts[LM.rightKnee].f -= 4
+    const k = find(analyzeScan(four(b)).findings, 'knee_hyperextension')!
+    expect(k.value).toBeGreaterThan(185)
+  })
+  it('forward head averages both sides (not the better one)', () => {
+    const b = body()
+    for (const i of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) b.pts[i].f += 18
+    const both = find(analyzeScan(four(b)).findings, 'forward_head')!.value
+    const left = find(analyzeScan(scan(b)).findings, 'forward_head')!.value
+    expect(both).toBeCloseTo(left, 0)
+  })
+  it('left-only scans (older ones) still work and say the right side is missing', () => {
+    const r = analyzeScan(scan(body()))
+    expect(find(r.findings, 'shoulder_forward_asymmetry')).toBeUndefined()
+    expect(r.notes.some((n) => /Only one side was scanned/.test(n))).toBe(true)
   })
 })

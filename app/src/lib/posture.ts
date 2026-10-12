@@ -11,6 +11,7 @@ export type Side = 'left' | 'right'
 export type FindingCode =
   | 'shoulder_height_asymmetry' | 'pelvic_height_asymmetry' | 'lateral_trunk_shift' | 'head_tilt'
   | 'knee_valgus_static' | 'knee_varus_static' | 'forward_head' | 'rounded_shoulders' | 'knee_hyperextension'
+  | 'shoulder_forward_asymmetry'
 
 export interface Finding {
   code: FindingCode
@@ -20,7 +21,7 @@ export interface Finding {
   /** 0–1. Below SHOW_AS_POSSIBLE the report says "possible"; below HIDE it isn't shown as a finding. */
   confidence: number
   side?: Side
-  views: ('front' | 'side' | 'back')[]
+  views: ('front' | 'side' | 'side_right' | 'back')[]
 }
 
 export interface Proportions {
@@ -55,6 +56,8 @@ const THRESHOLDS: Record<FindingCode, { at: [number, number, number]; below?: tr
   rounded_shoulders: { at: [2, 4, 6] },
   // Spec gives > 185°; moderate and marked step by 5°.
   knee_hyperextension: { at: [185, 190, 195] },
+  // One shoulder further forward than the other, left vs right side photos (GymBro convention, no validated cut-off).
+  shoulder_forward_asymmetry: { at: [2, 3, 4] },
 }
 
 /** How far each metric can be trusted from 2D landmarks alone, before per-scan quality. */
@@ -68,6 +71,7 @@ const RELIABILITY: Record<FindingCode, number> = {
   knee_hyperextension: 0.65,
   rounded_shoulders: 0.6,
   forward_head: 0.55, // uses the shoulder instead of C7: an approximation (spec)
+  shoulder_forward_asymmetry: 0.55, // two separate photos, standing and distance can differ between them
 }
 
 export function grade(code: FindingCode, value: number): Severity {
@@ -113,7 +117,7 @@ function bySide(pts: P[], a: number, b: number, view: 'front' | 'back'): { left:
   return view === 'front' ? { left: hi, right: lo } : { left: lo, right: hi }
 }
 
-interface Raw { code: FindingCode; signed: number; unit: string; vis: number; view: 'front' | 'side' | 'back' }
+interface Raw { code: FindingCode; signed: number; unit: string; vis: number; view: 'front' | 'side' | 'side_right' | 'back' }
 
 /** Frontal-plane metrics. Signed values: positive = towards / higher on the person's left. */
 function frontal(pts: P[], view: 'front' | 'back', cm: number): Raw[] {
@@ -152,7 +156,7 @@ function frontal(pts: P[], view: 'front' | 'back', cm: number): Raw[] {
 }
 
 /** Sagittal-plane metrics from the side view, using whichever side faced the camera. */
-function sagittal(pts: P[], cm: number): Raw[] {
+function sagittal(pts: P[], cm: number, view: 'side' | 'side_right' = 'side'): Raw[] {
   const near = (a: number, b: number) => (pts[a].v >= pts[b].v ? pts[a] : pts[b])
   const E = near(LM.leftEar, LM.rightEar), S = near(LM.leftShoulder, LM.rightShoulder)
   const H = near(LM.leftHip, LM.rightHip), K = near(LM.leftKnee, LM.rightKnee), A = near(LM.leftAnkle, LM.rightAnkle)
@@ -160,13 +164,13 @@ function sagittal(pts: P[], cm: number): Raw[] {
   const f = Math.sign(pts[LM.nose].x - E.x) || 1
   const out: Raw[] = []
   const cva = deg(Math.atan2(S.y - E.y, (E.x - S.x) * f))
-  out.push({ code: 'forward_head', signed: cva, unit: '°', vis: Math.min(E.v, S.v), view: 'side' })
-  out.push({ code: 'rounded_shoulders', signed: (S.x - H.x) * f * cm, unit: 'cm', vis: Math.min(S.v, H.v), view: 'side' })
+  out.push({ code: 'forward_head', signed: cva, unit: '°', vis: Math.min(E.v, S.v), view })
+  out.push({ code: 'rounded_shoulders', signed: (S.x - H.x) * f * cm, unit: 'cm', vis: Math.min(S.v, H.v), view })
   const lineX = H.x + ((A.x - H.x) * (K.y - H.y)) / Math.max(1, A.y - H.y)
   const behind = (K.x - lineX) * -f > 0
   const bend = 180 - deg(Math.acos(Math.max(-1, Math.min(1,
     ((H.x - K.x) * (A.x - K.x) + (H.y - K.y) * (A.y - K.y)) / (Math.hypot(H.x - K.x, H.y - K.y) * Math.hypot(A.x - K.x, A.y - K.y))))))
-  out.push({ code: 'knee_hyperextension', signed: behind ? 180 + bend : 180 - bend, unit: '°', vis: Math.min(H.v, K.v, A.v), view: 'side' })
+  out.push({ code: 'knee_hyperextension', signed: behind ? 180 + bend : 180 - bend, unit: '°', vis: Math.min(H.v, K.v, A.v), view })
   return out
 }
 
@@ -196,14 +200,26 @@ export function analyzeScan(scan: PostureScan): PostureReport {
     for (const raw of frontal(pts, view, height ? cmPerPx(pts, height) : 0)) raws.push({ raw, cap })
     if (!cap.tilt) notes.push(`The ${view} photo has no level reading from the phone, so left/right comparisons are less certain.`)
   }
-  const side = scan.views.side
-  if (side) {
-    const pts = uprightPoints(side, scan.camera)
-    for (const raw of sagittal(pts, height ? cmPerPx(pts, height) : 0)) raws.push({ raw, cap: side })
-  } else notes.push('No side photo: head, shoulder and knee alignment were not measured.')
+  // Side views: the left side ('side') and, when scanned, the right side. Each sees only its near side.
+  for (const v of ['side', 'side_right'] as const) {
+    const cap = scan.views[v]
+    if (!cap) continue
+    const pts = uprightPoints(cap, scan.camera)
+    for (const raw of sagittal(pts, height ? cmPerPx(pts, height) : 0, v)) raws.push({ raw, cap })
+  }
+  if (!scan.views.side && !scan.views.side_right) notes.push('No side photo: head, shoulder and knee alignment were not measured.')
+  else if (!scan.views.side || !scan.views.side_right) notes.push('Only one side was scanned, so left and right shoulder position weren\'t compared. Add the right side next time.')
 
-  // Merge per code. Front and back both measure the frontal metrics; averaging them steadies the result, and
-  // agreement between the two views raises confidence. Knees: keep the worse leg.
+  // Left vs right shoulder depth: how much further forward one shoulder sits than the other (cm, positive = left).
+  const leftRound = raws.find((r) => r.raw.code === 'rounded_shoulders' && r.raw.view === 'side')
+  const rightRound = raws.find((r) => r.raw.code === 'rounded_shoulders' && r.raw.view === 'side_right')
+  if (leftRound && rightRound && height) {
+    const weaker = leftRound.raw.vis <= rightRound.raw.vis ? leftRound : rightRound
+    raws.push({ raw: { code: 'shoulder_forward_asymmetry', signed: leftRound.raw.signed - rightRound.raw.signed, unit: 'cm', vis: weaker.raw.vis, view: 'side' }, cap: weaker.cap })
+  }
+
+  // Merge per code. Front and back (and left and right side) measure the same things; averaging them steadies the
+  // result, and agreement between the two views raises confidence. Knees: keep the worse leg.
   const codes = [...new Set(raws.map((r) => r.raw.code))]
   for (const code of codes) {
     const items = raws.filter((r) => r.raw.code === code)
@@ -211,15 +227,16 @@ export function analyzeScan(scan: PostureScan): PostureReport {
     if (cmBased && !height) continue
     let value: number, signed: number, conf: number
     const views = [...new Set(items.map((i) => i.raw.view))]
-    if (code === 'knee_valgus_static' || code === 'knee_varus_static' || code === 'knee_hyperextension' || code === 'forward_head') {
+    if (code === 'knee_valgus_static' || code === 'knee_varus_static' || code === 'knee_hyperextension') {
       // One value per leg (or a single side-view value): report the leg that deviates more.
       const pick = items.reduce((a, b) => (Math.abs(b.raw.signed - (code === 'knee_hyperextension' ? 180 : 0)) > Math.abs(a.raw.signed - (code === 'knee_hyperextension' ? 180 : 0)) ? b : a))
       signed = pick.raw.signed
-      value = code === 'forward_head' || code === 'knee_hyperextension' ? signed : Math.abs(signed)
+      value = code === 'knee_hyperextension' ? signed : Math.abs(signed)
       conf = confidence(code, pick.raw.vis, pick.cap)
     } else {
       signed = items.reduce((s, i) => s + i.raw.signed, 0) / items.length
-      value = Math.abs(signed)
+      // Angles are reported as they are; cm offsets as a distance with a side.
+      value = code === 'forward_head' ? signed : Math.abs(signed)
       conf = Math.max(...items.map((i) => confidence(code, i.raw.vis, i.cap)))
       if (items.length === 2) {
         const [a, b] = items.map((i) => i.raw.signed)
@@ -265,7 +282,7 @@ export function referralFor(findings: Finding[]): string | undefined {
 }
 
 /** Plain-language text and the training response per finding (spec mapping table). */
-export const FINDING_INFO: Record<FindingCode, { title: string; metric: string; what: string; response: string }> = {
+export const FINDING_INFO: Record<FindingCode, { title: string; metric: string; what: string; response: string; tentative?: true }> = {
   shoulder_height_asymmetry: {
     title: 'Uneven shoulder height',
     metric: 'Shoulder height difference',
@@ -314,6 +331,14 @@ export const FINDING_INFO: Record<FindingCode, { title: string; metric: string; 
     what: 'Your shoulders sit in front of your hips when seen from the side.',
     response: 'Pec doorway stretch, thoracic extension; face pulls, band pull-aparts, rear delt flies; pull at least as much as you push.',
   },
+  shoulder_forward_asymmetry: {
+    title: 'One shoulder further forward',
+    metric: 'Shoulder depth, left vs right (side photos)',
+    what: 'Seen from each side, one shoulder sits further forward than the other. Common with one-sided sports and a rotated upper back; photos only estimate it.',
+    // Compares two separate photos with no validated cut-off: always worded as "possible".
+    tentative: true,
+    response: 'Stretch the chest and front of the shoulder on the forward side; rear delt and lower-trap work, starting with that side.',
+  },
   knee_hyperextension: {
     title: 'Knees lock back',
     metric: 'Knee angle (side)',
@@ -336,6 +361,7 @@ export const FINDING_MUSCLES: Record<FindingCode, { strengthen: Muscle[]; stretc
   knee_valgus_static: { strengthen: ['glute_med', 'glutes'], stretch: ['Calves (ankle mobility)', 'Adductors'] },
   knee_varus_static: { strengthen: ['adductors', 'glute_med'], stretch: [] },
   knee_hyperextension: { strengthen: ['hamstrings', 'calves'], stretch: [] },
+  shoulder_forward_asymmetry: { strengthen: ['rear_delt', 'lower_trap'], stretch: ['Chest and front of the shoulder on the forward side'] },
 }
 
 const SEVERITY_WEIGHT: Record<Severity, number> = { none: 0, mild: 1, moderate: 2, marked: 3 }
