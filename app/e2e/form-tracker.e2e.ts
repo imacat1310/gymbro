@@ -18,6 +18,8 @@ async function freeWorkoutWith(page: Page, name: string) {
   await page.getByRole('button', { name: '+ Add exercise' }).click()
   await page.getByPlaceholder(/search/i).fill(name)
   await page.locator('.pick-item', { hasText: name }).first().click()
+  // The card appears once the exercise is saved; tests read the database after this.
+  await expect(page.locator('article.entry', { hasText: name })).toBeVisible()
 }
 
 const idb = <T,>(page: Page, fn: string, arg?: unknown) => page.evaluate(({ fn, arg }) => new Promise<T>((resolve, reject) => {

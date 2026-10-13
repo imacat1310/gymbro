@@ -23,8 +23,14 @@ export default defineConfig({
       name: 'android-chromium',
       use: {
         ...devices['Pixel 7'],
-        // A fake camera for the pose tests (e2e/assets.e2e.ts); harmless for the others.
-        launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+        // A fake camera for the pose tests (e2e/assets.e2e.ts); harmless for the others. On a Mac, use the real GPU:
+        // headless Chromium otherwise falls back to software WebGL, about 8× slower for pose detection.
+        launchOptions: {
+          args: [
+            '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
+            ...(process.platform === 'darwin' ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] : []),
+          ],
+        },
       },
     },
   ],

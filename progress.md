@@ -80,6 +80,11 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-13 (form check from a camera-roll video, v0.27.0)
+- **"Or analyse a video from your phone"** on the form-check setup: the video is stepped through at 30 fps (the live recording rate, so the same rules and thresholds apply), body points per frame, max 90 s (noted in the report), progress bar and cancel. The video stays on the phone and isn't stored (`lib/form/videoFile.ts`).
+- **E2E:** an unreadable file gets "Couldn't read the video" (runs everywhere). A real video is analysed into a report: local-only, `FORM_VIDEO=…` (a CC BY-SA clip isn't committed). Chromium tests on macOS now use the Metal GPU (software WebGL was ~8× slower). Fixed a test race (database read before the added exercise was saved).
+- **First real-video signal (not a tuning sample):** a 69 s **squat snatch** clip (Olympic lift, not a back squat) took ~2.4 min on the Mac. It gave 10 "reps", heels lifting (normal in a snatch) and some reps "71° above parallel" (pulls from the floor counted as squats). The pipeline works, but the judgement only fits the exercise it was built for, which is why labelled back-squat recordings are needed before trusting the thresholds. Possible later guard: reject reps that start from below standing (setup crouch).
+
 ### 2026-10-13 (form check → tracker, v0.26.0)
 - **Form-aware progression:** `lib/form/hold.ts` holds the next increase when the newest form check from the last workout with that exercise (or a warm-up check up to 2 h before its first set) said "keep this weight". It expires once the exercise is trained again. Used by the workout card and the summary's "Next time"; the reason names the score and main fault.
 - **Reps into the tracker:** a form check opened from a workout card (`?session=…&entry=…`) offers "Fill in N reps"; the next set's reps are pre-filled with a note, cleared after logging, and not re-applied on reload.

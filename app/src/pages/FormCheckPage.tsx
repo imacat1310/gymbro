@@ -13,11 +13,12 @@ import { analyzeSquat } from '../lib/form/squat'
 import { EMPTY_PROFILE, type FormProfile, type FormReport, type FormView, type PoseFrame, type Recording } from '../lib/form/types'
 import { formatDate } from '../lib/hooks'
 import { createPoseEngine, type PoseEngine } from '../lib/pose'
+import { recordingFromVideo } from '../lib/form/videoFile'
 import { ReportView } from '../components/FormReport'
 import { VIEW_INFO } from '../lib/form/views'
 
 type Facing = 'environment' | 'user'
-type Stage = 'setup' | 'camera' | 'countdown' | 'recording' | 'report'
+type Stage = 'setup' | 'camera' | 'countdown' | 'recording' | 'video' | 'report'
 
 const MAX_RECORD_MS = 90_000
 
@@ -33,6 +34,7 @@ export function FormCheckPage() {
   const [stage, setStage] = useState<Stage>('setup')
   const [report, setReport] = useState<FormReport | null>(null)
   const [recording, setRecording] = useState<Recording | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
   const profile = useLiveQuery(async () => {
     const [data, s] = await Promise.all([getBodyData(), getSettings()])
     return formProfile(data, s.limitations ?? [])
@@ -43,8 +45,9 @@ export function FormCheckPage() {
     return <div className="page"><p>No form check for this exercise yet. Squats are first.</p><Link to="/">Back</Link></div>
   }
 
-  async function finish(rec: Recording) {
-    const r = analyzeForm(rec, profile ?? EMPTY_PROFILE)
+  async function finish(rec: Recording, notes: string[] = []) {
+    const analysed = analyzeForm(rec, profile ?? EMPTY_PROFILE)
+    const r = notes.length ? { ...analysed, notMeasured: [...notes, ...analysed.notMeasured] } : analysed
     setRecording(rec)
     setReport(r)
     setStage('report')
@@ -82,6 +85,15 @@ export function FormCheckPage() {
             <h2>2. Record a set</h2>
             <p className="small">Stand tall for a moment when recording starts, then do your reps. GymBro counts them out loud. Only body points are kept, never video.</p>
             <button onClick={() => { unlockAudio(); unlockSpeech(); setStage('camera') }}>Start camera</button>
+            <label className="button secondary file-button">
+              Or analyse a video from your phone
+              <input type="file" accept="video/*" hidden onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) { setVideoFile(file); setStage('video') }
+              }} />
+            </label>
+            <p className="muted small">Filmed from the {view === 'side' ? 'side' : 'front'}, whole body in view. The video stays on your phone; only body points are analysed (up to 90 s).</p>
           </section>
           {history && history.length > 0 && (
             <section className="card stack">
@@ -99,6 +111,12 @@ export function FormCheckPage() {
       {(stage === 'camera' || stage === 'countdown' || stage === 'recording') && (
         <Recorder exerciseId={exerciseId} view={view} facing={facing} stage={stage} setStage={setStage}
           onDone={(rec) => void finish(rec)} onCancel={() => setStage('setup')} />
+      )}
+
+      {stage === 'video' && videoFile && (
+        <VideoAnalyzer file={videoFile} exerciseId={exerciseId} view={view}
+          onDone={(rec, truncated) => void finish(rec, truncated ? ['Only the first 90 seconds of the video were analysed.'] : [])}
+          onCancel={() => setStage('setup')} />
       )}
 
       {stage === 'report' && report && (
@@ -263,6 +281,44 @@ function Recorder({ exerciseId, view, facing, stage, setStage, onDone, onCancel 
         </div>
       )}
       {stage === 'recording' && <button className="log-btn" onClick={() => stopRef.current?.()}>Stop and analyse</button>}
+    </section>
+  )
+}
+
+/** Camera-roll video → body points, with progress and cancel. */
+function VideoAnalyzer({ file, exerciseId, view, onDone, onCancel }: {
+  file: File; exerciseId: string; view: FormView
+  onDone: (rec: Recording, truncated: boolean) => void; onCancel: () => void
+}) {
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [error, setError] = useState<string | null>(null)
+  const onDoneRef = useRef(onDone)
+  useEffect(() => { onDoneRef.current = onDone })
+
+  useEffect(() => {
+    const abort = new AbortController()
+    recordingFromVideo(file, exerciseId, view, setProgress, abort.signal)
+      .then(({ truncated, ...rec }) => onDoneRef.current(rec, truncated))
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+    return () => abort.abort()
+  }, [file, exerciseId, view])
+
+  const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
+  return (
+    <section className="card stack" aria-busy={!error}>
+      <h2>{error ? "Couldn't read the video" : 'Analysing your video…'}</h2>
+      {error ? <p className="error small">{error}</p> : (
+        <>
+          <div className="progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            <div className="progress-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="muted small">{progress.total ? `${pct}% · frame ${progress.done} of ${progress.total}` : 'Loading the pose model…'}</p>
+        </>
+      )}
+      <button className="secondary" onClick={onCancel}>{error ? 'Back' : 'Cancel'}</button>
     </section>
   )
 }
