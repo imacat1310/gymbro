@@ -6,12 +6,14 @@ import { Stepper } from './Stepper'
 import { FAULT_TITLE, VIEW_INFO } from '../lib/form/views'
 
 
-export function ReportView({ report, recording, profile, onAgain, onDone, onUseReps }: {
+export function ReportView({ report, recording, profile, onAgain, onDone, onUseReps, onLogSet }: {
   report: FormReport; recording: Recording | null; onAgain: () => void; onDone: () => void
   /** The profile the analysis used; included in a shared tuning sample. */
   profile?: FormProfile
   /** Opened from a workout: put the counted reps into that exercise's next set. */
   onUseReps?: () => void
+  /** Recorded from the set editor: log the set (weight from the editor × counted reps) in one tap. */
+  onLogSet?: { label: string; run: () => void }
 }) {
   if (report.error) {
     return (
@@ -83,10 +85,12 @@ export function ReportView({ report, recording, profile, onAgain, onDone, onUseR
         </section>
       )}
 
-      {onUseReps && <button className="log-btn" onClick={onUseReps}>Fill in {report.reps.length} reps</button>}
+      {onLogSet
+        ? <button className="log-btn" onClick={onLogSet.run}>✓ {onLogSet.label}</button>
+        : onUseReps && <button className="log-btn" onClick={onUseReps}>Fill in {report.reps.length} reps</button>}
       <div className="row">
         <button className="secondary" onClick={onAgain}>Record again</button>
-        <button className={onUseReps ? 'secondary' : ''} onClick={onDone}>Done</button>
+        <button className={onUseReps || onLogSet ? 'secondary' : ''} onClick={onDone}>{onLogSet ? 'Back without logging' : 'Done'}</button>
       </div>
       {recording && !report.error && profile && <LabelPanel report={report} recording={recording} profile={profile} />}
     </>

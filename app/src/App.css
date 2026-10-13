@@ -380,3 +380,10 @@ button:disabled { opacity: 0.5; }
 .progress { height: 10px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); transition: width 0.2s linear; }
 .label-panel .chips { margin-top: 6px; }
+.log-row { display: flex; gap: 8px; }
+.camera-switch { align-items: center; justify-content: space-between; }
+.camera-switch > * { flex: 0 1 auto; }
+.log-row .log-btn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.03em; }
+/* Compact so the Log label keeps its room: a red dot over a short label. */
+.log-row .record-btn { flex: 0 0 64px; min-height: 52px; padding: 0 4px; flex-direction: column; gap: 2px; font-size: 0.7rem; letter-spacing: 0.04em; }
+.record-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--error); }

@@ -1,13 +1,13 @@
 import { Why } from './Why'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { EXERCISE_BY_ID, type Exercise } from '../data/exercises'
 import { formHold } from '../lib/form/hold'
 import { supportsFormCheck } from '../lib/form/supported'
 import { db, type SessionEntry, type SetLog } from '../db/db'
 import { deleteSet, exerciseHistory, logSet, removeEntry, startRest, toLogged } from '../db/repo'
-import { unlockAudio } from '../lib/alerts'
+import { unlockAudio, unlockSpeech } from '../lib/alerts'
 import { formatDate } from '../lib/hooks'
 import {
   adjustNextSet, fmtKg, loadIncrement, platesPerSide, suggestNext, warmupSets, type NextSet, type Suggestion,
@@ -35,6 +35,7 @@ interface Props {
 
 export function EntryCard({ sessionId, entry, sets, experience, prefillReps, onPrefillUsed }: Props) {
   const ex = EXERCISE_BY_ID.get(entry.exerciseId)
+  const navigate = useNavigate()
   const history = useLiveQuery(() => exerciseHistory(entry.exerciseId, sessionId), [entry.exerciseId, sessionId])
   // Form checks for this exercise: one that said "keep this weight" holds back the next increase (ADR-022).
   const checks = useLiveQuery(() => db.formChecks.where('exerciseId').equals(entry.exerciseId).toArray(), [entry.exerciseId])
@@ -114,6 +115,12 @@ export function EntryCard({ sessionId, entry, sets, experience, prefillReps, onP
         experience={experience}
         setNumber={working.length + 1}
         done={done}
+        onRecord={supportsFormCheck(ex.id) ? (weightKg) => {
+          // This tap is the user gesture iOS needs for the countdown and rep-count voice on the camera screen.
+          unlockAudio()
+          unlockSpeech()
+          navigate(`/form/${ex.id}?session=${sessionId}&entry=${entry.key}&kg=${weightKg}&quick=1`)
+        } : undefined}
         onLog={(weightKg, reps, rpe) => {
           onPrefillUsed?.()
           unlockAudio()
@@ -139,7 +146,7 @@ function SetRow({ set, label, ex }: { set: SetLog; label: string; ex: Exercise }
   )
 }
 
-function SetEditor({ ex, target, planned, experience, setNumber, done, onLog }: {
+function SetEditor({ ex, target, planned, experience, setNumber, done, onLog, onRecord }: {
   ex: Exercise
   target: Target
   planned: NextSet
@@ -147,6 +154,8 @@ function SetEditor({ ex, target, planned, experience, setNumber, done, onLog }: 
   setNumber: number
   done: boolean
   onLog: (weightKg: number, reps: number, rpe?: number) => void
+  /** Record this set on camera: reps counted and form feedback, then logged from the report (ADR-022). */
+  onRecord?: (weightKg: number) => void
 }) {
   const [weight, setWeight] = useState(planned.weightKg)
   const [reps, setReps] = useState(planned.reps)
@@ -187,9 +196,16 @@ function SetEditor({ ex, target, planned, experience, setNumber, done, onLog }: 
           ))}
         </div>
       </div>
-      <button className="log-btn" disabled={reps <= 0} onClick={() => onLog(weight, reps, rpe)}>
-        ✓ Log {inc > 0 || weight > 0 ? `${fmtKg(weight)} × ` : ''}{reps}{ex.measure === 'time' ? ' s' : ''}
-      </button>
+      <div className="log-row">
+        <button className="log-btn" disabled={reps <= 0} onClick={() => onLog(weight, reps, rpe)}>
+          ✓ Log {inc > 0 || weight > 0 ? `${fmtKg(weight)} × ` : ''}{reps}{ex.measure === 'time' ? ' s' : ''}
+        </button>
+        {onRecord && (
+          <button className="secondary record-btn" onClick={() => onRecord(weight)} aria-label="Record this set: count reps and get form feedback">
+            <span className="record-dot" aria-hidden="true" />Rec
+          </button>
+        )}
+      </div>
     </div>
   )
 }

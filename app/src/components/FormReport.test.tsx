@@ -47,4 +47,13 @@ describe('form report screen', () => {
     const none = renderToStaticMarkup(<ReportView report={analyzeSquat(bad, EMPTY_PROFILE)} recording={bad} profile={EMPTY_PROFILE} onAgain={() => {}} onDone={() => {}} />)
     expect(none).not.toContain('Help tune')
   })
+
+  it('recorded from a set: one tap logs weight × counted reps, or go back without logging', () => {
+    const rec = squatRecording({ view: 'side', reps: 5 })
+    const html = renderToStaticMarkup(<ReportView report={analyzeSquat(rec, EMPTY_PROFILE)} recording={rec} profile={EMPTY_PROFILE}
+      onAgain={() => {}} onDone={() => {}} onUseReps={() => {}} onLogSet={{ label: 'Log 60 kg × 5', run: () => {} }} />)
+    expect(html).toContain('✓ Log 60 kg × 5')
+    expect(html).toContain('Back without logging')
+    expect(html).not.toContain('Fill in')
+  })
 })

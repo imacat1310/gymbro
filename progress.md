@@ -80,6 +80,13 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-13 (Record a set from the workout, v0.29.0)
+- **REC button next to ✓ Log** on exercises with a form check (squats), in plan and free workouts. One tap goes **straight to the camera** (quick mode: no setup screen) with the editor's weight carried over. The last angle is remembered on the device (guarded `localStorage`), and angle / flip camera can be switched on the camera screen. The tap also unlocks the countdown and rep-count voice on iOS.
+- **Report → "✓ Log 24 kg × N"** logs the set (editor weight × counted reps), starts the rest timer and returns to the workout. "Back without logging" and "Record again" stay available. Cancel on the camera returns to the workout.
+- **Layout:** the first side-by-side version wrapped the Log label, and with 102.5 kg the row overflowed and cut off Record. Now a compact 64 px REC button (red dot + label); Log gets the rest, stays on one line and truncates as a last resort. Checked at iPhone width with 24 and 102.5 kg: no overflow.
+- **Tests:** unit 333 ✅ (report: log-from-record button); E2E 24 ✅ in WebKit + Chromium (+6: REC on the squat in a plan workout but not on every exercise; REC → camera directly with kg in the URL, switches shown, Cancel back to the workout; no REC on bench press).
+- **Not testable headless:** the record → report → log path with a real person (covered by unit tests of each piece).
+
 ### 2026-10-13 (tuning loop: labelling + Mac evaluation tools, v0.28.0)
 - **Thresholds as a parameter:** `SquatThresholds` / `DEFAULT_SQUAT_THRESHOLDS` (values unchanged; all 36 form tests pass unchanged).
 - **In-app labelling:** "Help tune GymBro: label this set": per rep, tick the faults that really happened (starts unlabelled, with "GymBro saw…" shown), correct the rep count, then share a labelled sample via the share sheet (body points + profile + labels, no video).

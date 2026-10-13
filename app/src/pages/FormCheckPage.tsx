@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { EXERCISE_BY_ID } from '../data/exercises'
 import { db } from '../db/db'
-import { getBodyData, getSettings, saveFormCheck } from '../db/repo'
+import { getBodyData, getSettings, logSet, saveFormCheck, startRest } from '../db/repo'
 import { speak, unlockAudio, unlockSpeech } from '../lib/alerts'
 import { framingHint } from '../lib/form/framing'
 import { analyzeForm, supportsFormCheck } from '../lib/form'
@@ -16,6 +16,8 @@ import { createPoseEngine, type PoseEngine } from '../lib/pose'
 import { recordingFromVideo } from '../lib/form/videoFile'
 import { ReportView } from '../components/FormReport'
 import { VIEW_INFO } from '../lib/form/views'
+import { lastFormView, rememberFormView } from '../lib/form/prefs'
+import { fmtKg } from '../lib/progression'
 
 type Facing = 'environment' | 'user'
 type Stage = 'setup' | 'camera' | 'countdown' | 'recording' | 'video' | 'report'
@@ -27,11 +29,16 @@ export function FormCheckPage() {
   const [params] = useSearchParams()
   const sessionId = params.get('session') ?? undefined
   const entryKey = params.get('entry') ?? undefined
+  // Quick mode: opened from a set's Record button: straight to the camera, then log the set from the report.
+  const quick = params.get('quick') === '1'
+  const kgParam = params.get('kg')
+  const setKg = kgParam !== null && !Number.isNaN(Number(kgParam)) ? Number(kgParam) : undefined
   const navigate = useNavigate()
   const ex = EXERCISE_BY_ID.get(exerciseId)
-  const [view, setView] = useState<FormView>('side')
+  const [view, setViewState] = useState<FormView>(lastFormView)
+  const setView = (v: FormView) => { setViewState(v); rememberFormView(v) }
   const [facing, setFacing] = useState<Facing>('environment')
-  const [stage, setStage] = useState<Stage>('setup')
+  const [stage, setStage] = useState<Stage>(quick ? 'camera' : 'setup')
   const [report, setReport] = useState<FormReport | null>(null)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
@@ -52,6 +59,18 @@ export function FormCheckPage() {
     setReport(r)
     setStage('report')
     if (!r.error) await saveFormCheck(r, sessionId)
+  }
+
+  /** Log the recorded set into the workout (weight from the set editor, reps counted), start rest, go back. */
+  async function logRecordedSet(reps: number) {
+    if (!sessionId || !entryKey || setKg === undefined) return
+    const session = await db.sessions.get(sessionId)
+    const entry = session?.entries.find((e) => e.key === entryKey)
+    if (session && !session.endedAt && entry) {
+      await logSet({ sessionId, entryKey, exerciseId, kind: 'working', weightKg: setKg, reps })
+      await startRest(sessionId, entry.target.restSec)
+    }
+    navigate('/workout')
   }
 
   return (
@@ -108,9 +127,22 @@ export function FormCheckPage() {
         </>
       )}
 
+      {stage === 'camera' && (
+        // Switch angle or camera without going back to setup (quick mode skips it).
+        <div className="row camera-switch">
+          <div className="chips">
+            {(Object.keys(VIEW_INFO) as FormView[]).map((v) => (
+              <button key={v} className={`chip small ${view === v ? 'on' : ''}`} aria-pressed={view === v} onClick={() => setView(v)}>{VIEW_INFO[v].title}</button>
+            ))}
+          </div>
+          <button className="ghost small" onClick={() => setFacing(facing === 'environment' ? 'user' : 'environment')}>Flip camera</button>
+        </div>
+      )}
+      {stage === 'camera' && <p className="muted small">{VIEW_INFO[view].how}</p>}
+
       {(stage === 'camera' || stage === 'countdown' || stage === 'recording') && (
         <Recorder exerciseId={exerciseId} view={view} facing={facing} stage={stage} setStage={setStage}
-          onDone={(rec) => void finish(rec)} onCancel={() => setStage('setup')} />
+          onDone={(rec) => void finish(rec)} onCancel={() => (quick ? navigate('/workout') : setStage('setup'))} />
       )}
 
       {stage === 'video' && videoFile && (
@@ -121,6 +153,9 @@ export function FormCheckPage() {
 
       {stage === 'report' && report && (
         <ReportView report={report} recording={recording} profile={profile ?? EMPTY_PROFILE}
+          onLogSet={sessionId && entryKey && setKg !== undefined && !report.error && report.reps.length
+            ? { label: setKg > 0 ? `Log ${fmtKg(setKg)} × ${report.reps.length}` : `Log ${report.reps.length} reps`, run: () => void logRecordedSet(report.reps.length) }
+            : undefined}
           onUseReps={sessionId && entryKey && !report.error && report.reps.length
             ? () => navigate('/workout', { state: { formReps: { entryKey, reps: report.reps.length } } })
             : undefined}
