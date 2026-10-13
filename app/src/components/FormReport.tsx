@@ -1,10 +1,14 @@
 // Form-check report (ADR-022): score, tips with personal reasons, faults, rep-by-rep table.
 import { useState } from 'react'
 import type { FormReport, Recording } from '../lib/form/types'
-import { VIEW_INFO } from '../lib/form/views'
+import { FAULT_TITLE, VIEW_INFO } from '../lib/form/views'
 
 
-export function ReportView({ report, recording, onAgain, onDone }: { report: FormReport; recording: Recording | null; onAgain: () => void; onDone: () => void }) {
+export function ReportView({ report, recording, onAgain, onDone, onUseReps }: {
+  report: FormReport; recording: Recording | null; onAgain: () => void; onDone: () => void
+  /** Opened from a workout: put the counted reps into that exercise's next set. */
+  onUseReps?: () => void
+}) {
   if (report.error) {
     return (
       <section className="card stack">
@@ -75,9 +79,10 @@ export function ReportView({ report, recording, onAgain, onDone }: { report: For
         </section>
       )}
 
+      {onUseReps && <button className="log-btn" onClick={onUseReps}>Fill in {report.reps.length} reps</button>}
       <div className="row">
         <button className="secondary" onClick={onAgain}>Record again</button>
-        <button onClick={onDone}>Done</button>
+        <button className={onUseReps ? 'secondary' : ''} onClick={onDone}>Done</button>
       </div>
       {recording && <TuningExport recording={recording} />}
     </>
@@ -117,9 +122,5 @@ function TuningExport({ recording }: { recording: Recording }) {
   )
 }
 
-const FAULT_TITLE: Record<FormReport['faults'][number]['code'], string> = {
-  shallow: 'Depth above parallel', forward_lean: 'Torso lean', heel_rise: 'Heels lifting', fast_descent: 'Fast descent',
-  fatigue_breakdown: 'Form slipping late in the set', knee_cave: 'Knees moving in', hip_shift: 'Shifting to one side',
-}
 
 const fmtDepth = (d?: number) => (d === undefined ? '–' : `${d > 0 ? '+' : ''}${Math.round(d)}°`)

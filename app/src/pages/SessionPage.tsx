@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { EXERCISE_BY_ID } from '../data/exercises'
+import { formHold } from '../lib/form/hold'
 import { db } from '../db/db'
 import { discardSession, exerciseHistory, toLogged } from '../db/repo'
 import { formatDate, formatDuration, useNow } from '../lib/hooks'
@@ -25,7 +26,10 @@ export function SessionPage() {
       if (!ex) return null
       const history = await exerciseHistory(ex.id)
       if (!history.length) return null
-      return { name: ex.name, suggestion: suggestNext(ex, entry.target, history.map((h) => h.sets.map(toLogged))) }
+      // Same rule as the workout screen: a form check that said "keep this weight" holds the next increase.
+      const checks = await db.formChecks.where('exerciseId').equals(ex.id).toArray()
+      const hold = formHold(checks, history[0].date)
+      return { name: ex.name, suggestion: suggestNext(ex, entry.target, history.map((h) => h.sets.map(toLogged)), { blockIncrease: hold }) }
     }))
     return { session, sets, prs: findPRs(sets, earlier), next: next.filter((n) => n !== null) }
   }, [id])

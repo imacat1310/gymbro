@@ -25,6 +25,7 @@ export function FormCheckPage() {
   const { exerciseId = '' } = useParams()
   const [params] = useSearchParams()
   const sessionId = params.get('session') ?? undefined
+  const entryKey = params.get('entry') ?? undefined
   const navigate = useNavigate()
   const ex = EXERCISE_BY_ID.get(exerciseId)
   const [view, setView] = useState<FormView>('side')
@@ -102,6 +103,9 @@ export function FormCheckPage() {
 
       {stage === 'report' && report && (
         <ReportView report={report} recording={recording}
+          onUseReps={sessionId && entryKey && !report.error && report.reps.length
+            ? () => navigate('/workout', { state: { formReps: { entryKey, reps: report.reps.length } } })
+            : undefined}
           onAgain={() => { setReport(null); setStage('camera') }}
           onDone={() => (sessionId ? navigate('/workout') : navigate(-1))} />
       )}

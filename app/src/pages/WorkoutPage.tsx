@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router'
 import { EntryCard } from '../components/EntryCard'
 import { ExercisePicker } from '../components/ExercisePicker'
 import { RestBar } from '../components/RestBar'
@@ -8,12 +8,21 @@ import { db } from '../db/db'
 import { addEntry, discardSession, finishSession } from '../db/repo'
 import { formatDuration, useActiveSession, useNow, useSettings, useWakeLock } from '../lib/hooks'
 
+interface FormReps { entryKey: string; reps: number }
+
 export function WorkoutPage() {
   const session = useActiveSession()
   const settings = useSettings()
   const navigate = useNavigate()
   const now = useNow(1000)
   const [picking, setPicking] = useState(false)
+  // Reps counted by a form check opened from this workout (FormCheckPage → "Fill in N reps").
+  const location = useLocation()
+  const [formReps, setFormReps] = useState<FormReps | null>(() => (location.state as { formReps?: FormReps } | null)?.formReps ?? null)
+  useEffect(() => {
+    // Clear the navigation state so a reload doesn't fill the reps in again.
+    if ((location.state as { formReps?: FormReps } | null)?.formReps) navigate('.', { replace: true, state: null })
+  }, [location.state, navigate])
   const sets = useLiveQuery(() => (session ? db.sets.where('sessionId').equals(session.id).sortBy('completedAt') : []), [session?.id])
   const gym = useLiveQuery(() => (session?.gymId ? db.gyms.get(session.gymId) : undefined), [session?.gymId])
   useWakeLock(!!session)
@@ -60,6 +69,8 @@ export function WorkoutPage() {
           key={entry.key}
           sessionId={session.id}
           entry={entry}
+          prefillReps={formReps?.entryKey === entry.key ? formReps.reps : undefined}
+          onPrefillUsed={() => setFormReps(null)}
           sets={sets?.filter((s) => s.entryKey === entry.key) ?? []}
           experience={settings.profile.experience}
         />

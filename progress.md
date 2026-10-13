@@ -80,6 +80,11 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-13 (form check → tracker, v0.26.0)
+- **Form-aware progression:** `lib/form/hold.ts` holds the next increase when the newest form check from the last workout with that exercise (or a warm-up check up to 2 h before its first set) said "keep this weight". It expires once the exercise is trained again. Used by the workout card and the summary's "Next time"; the reason names the score and main fault.
+- **Reps into the tracker:** a form check opened from a workout card (`?session=…&entry=…`) offers "Fill in N reps"; the next set's reps are pre-filled with a note, cleared after logging, and not re-applied on reload.
+- **Tests:** unit +4 (hold rules); E2E +2 in WebKit and Chromium (hold shown on card and summary; counted reps fill the next set and are logged). Learned: Dexie 4 caches query results, so data injected directly into IndexedDB needs a reload. Real saves go through Dexie and are unaffected.
+
 ### 2026-10-13 (can this Mac run the form-check evaluation? Yes)
 - **Machine:** MacBook Pro M1 Pro (8 CPU cores: 6 performance + 2 efficiency; 14-core GPU, Metal 4), 16 GB RAM, 64 GB free disk, macOS 26.6.
 - **Benchmark:** the app's own MediaPipe 1.1.0 web runtime and models in Playwright's Chromium. Offline batch (seek frame by frame) on a real 640×480 CC BY-SA squat-snatch video (Wikimedia Commons, local scratch only, not committed), 300 frames per run, person found in 100% of frames:

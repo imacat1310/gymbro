@@ -3,8 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { EXERCISE_BY_ID, type Exercise } from '../data/exercises'
+import { formHold } from '../lib/form/hold'
 import { supportsFormCheck } from '../lib/form/supported'
-import type { SessionEntry, SetLog } from '../db/db'
+import { db, type SessionEntry, type SetLog } from '../db/db'
 import { deleteSet, exerciseHistory, logSet, removeEntry, startRest, toLogged } from '../db/repo'
 import { unlockAudio } from '../lib/alerts'
 import { formatDate } from '../lib/hooks'
@@ -27,22 +28,29 @@ interface Props {
   entry: SessionEntry
   sets: SetLog[]
   experience: Experience
+  /** Reps counted by a form check of this exercise, to fill into the next set. */
+  prefillReps?: number
+  onPrefillUsed?: () => void
 }
 
-export function EntryCard({ sessionId, entry, sets, experience }: Props) {
+export function EntryCard({ sessionId, entry, sets, experience, prefillReps, onPrefillUsed }: Props) {
   const ex = EXERCISE_BY_ID.get(entry.exerciseId)
   const history = useLiveQuery(() => exerciseHistory(entry.exerciseId, sessionId), [entry.exerciseId, sessionId])
+  // Form checks for this exercise: one that said "keep this weight" holds back the next increase (ADR-022).
+  const checks = useLiveQuery(() => db.formChecks.where('exerciseId').equals(entry.exerciseId).toArray(), [entry.exerciseId])
   if (!ex) return null
 
   const { target } = entry
   const working = sets.filter((s) => s.kind === 'working')
   const warmups = sets.filter((s) => s.kind === 'warmup')
   const inc = loadIncrement(ex)
-  const suggestion = history ? suggestNext(ex, target, history.map((h) => h.sets.map(toLogged))) : null
+  const hold = checks ? formHold(checks, history?.[0]?.date) : undefined
+  const suggestion = history ? suggestNext(ex, target, history.map((h) => h.sets.map(toLogged)), { blockIncrease: hold }) : null
   const last = working[working.length - 1]
 
   let planned: NextSet = { weightKg: suggestion?.weightKg ?? 0, reps: suggestion?.reps ?? target.repMax }
   if (last) planned = adjustNextSet({ weightKg: last.weightKg, reps: suggestion?.reps ?? last.reps }, toLogged(last), target, inc)
+  if (prefillReps) planned = { ...planned, reps: prefillReps, note: `${prefillReps} reps counted by your form check` }
 
   const pendingWarmups = !last && suggestion?.weightKg
     ? warmupSets(ex, suggestion.weightKg).slice(warmups.length)
@@ -58,7 +66,7 @@ export function EntryCard({ sessionId, entry, sets, experience }: Props) {
           <div className="muted small">
             {target.sets} × {target.repMin}–{target.repMax} {unit} @ RPE {target.targetRpe} · rest {Math.round(target.restSec / 60 * 10) / 10} min
           </div>
-          {supportsFormCheck(ex.id) && <Link to={`/form/${ex.id}?session=${sessionId}`} className="form-link small">Check form</Link>}
+          {supportsFormCheck(ex.id) && <Link to={`/form/${ex.id}?session=${sessionId}&entry=${entry.key}`} className="form-link small">Check form</Link>}
         </div>
         <button className="ghost small" aria-label={`Remove ${ex.name}`} onClick={() => {
           if (sets.length === 0 || confirm(`Remove ${ex.name} and its ${sets.length} logged sets?`)) void removeEntry(sessionId, entry.key)
@@ -99,7 +107,7 @@ export function EntryCard({ sessionId, entry, sets, experience }: Props) {
       )}
 
       <SetEditor
-        key={`${working.length}-${suggestion?.weightKg ?? 'x'}`}
+        key={`${working.length}-${suggestion?.weightKg ?? 'x'}-${prefillReps ?? ''}`}
         ex={ex}
         target={target}
         planned={planned}
@@ -107,6 +115,7 @@ export function EntryCard({ sessionId, entry, sets, experience }: Props) {
         setNumber={working.length + 1}
         done={done}
         onLog={(weightKg, reps, rpe) => {
+          onPrefillUsed?.()
           unlockAudio()
           void logSet({ sessionId, entryKey: entry.key, exerciseId: ex.id, kind: 'working', weightKg, reps, rpe })
           void startRest(sessionId, target.restSec)
