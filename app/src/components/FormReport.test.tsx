@@ -38,4 +38,13 @@ describe('form report screen', () => {
     expect(render(analyzeSquat(squatRecording({ view: 'side', visibility: 0.2 }), EMPTY_PROFILE))).toMatch(/Couldn(&#x27;|')t see you clearly/)
     expect(render(analyzeSquat(squatRecording({ view: 'side', reps: 0, standSec: 3 }), EMPTY_PROFILE))).toContain('No reps found')
   })
+
+  it('offers labelling for tuning when there is a recording, and not for unusable sets', () => {
+    const rec = squatRecording({ view: 'side', reps: 2 })
+    const html = renderToStaticMarkup(<ReportView report={analyzeSquat(rec, EMPTY_PROFILE)} recording={rec} profile={EMPTY_PROFILE} onAgain={() => {}} onDone={() => {}} />)
+    expect(html).toContain('Help tune GymBro: label this set')
+    const bad = squatRecording({ view: 'side', visibility: 0.2 })
+    const none = renderToStaticMarkup(<ReportView report={analyzeSquat(bad, EMPTY_PROFILE)} recording={bad} profile={EMPTY_PROFILE} onAgain={() => {}} onDone={() => {}} />)
+    expect(none).not.toContain('Help tune')
+  })
 })

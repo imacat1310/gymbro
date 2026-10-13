@@ -120,7 +120,7 @@ export function FormCheckPage() {
       )}
 
       {stage === 'report' && report && (
-        <ReportView report={report} recording={recording}
+        <ReportView report={report} recording={recording} profile={profile ?? EMPTY_PROFILE}
           onUseReps={sessionId && entryKey && !report.error && report.reps.length
             ? () => navigate('/workout', { state: { formReps: { entryKey, reps: report.reps.length } } })
             : undefined}

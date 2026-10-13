@@ -1,11 +1,15 @@
 // Form-check report (ADR-022): score, tips with personal reasons, faults, rep-by-rep table.
 import { useState } from 'react'
-import type { FormReport, Recording } from '../lib/form/types'
+import { makeSample, VIEW_FAULTS, type SampleLabels } from '../lib/form/sample'
+import type { FaultCode, FormProfile, FormReport, Recording } from '../lib/form/types'
+import { Stepper } from './Stepper'
 import { FAULT_TITLE, VIEW_INFO } from '../lib/form/views'
 
 
-export function ReportView({ report, recording, onAgain, onDone, onUseReps }: {
+export function ReportView({ report, recording, profile, onAgain, onDone, onUseReps }: {
   report: FormReport; recording: Recording | null; onAgain: () => void; onDone: () => void
+  /** The profile the analysis used; included in a shared tuning sample. */
+  profile?: FormProfile
   /** Opened from a workout: put the counted reps into that exercise's next set. */
   onUseReps?: () => void
 }) {
@@ -84,7 +88,7 @@ export function ReportView({ report, recording, onAgain, onDone, onUseReps }: {
         <button className="secondary" onClick={onAgain}>Record again</button>
         <button className={onUseReps ? 'secondary' : ''} onClick={onDone}>Done</button>
       </div>
-      {recording && <TuningExport recording={recording} />}
+      {recording && !report.error && profile && <LabelPanel report={report} recording={recording} profile={profile} />}
     </>
   )
 }
@@ -104,23 +108,62 @@ function Tip({ text, why }: { text: string; why?: string }) {
   )
 }
 
-/** Opt-in: share the body points (no video) so thresholds can be tuned on real sets. */
-function TuningExport({ recording }: { recording: Recording }) {
+/**
+ * Opt-in tuning help: mark what really happened on each rep, then share the body points (no video) with those
+ * labels. Starts unlabelled (what GymBro saw is shown, not pre-selected) so the labels are the user's own judgement.
+ */
+function LabelPanel({ report, recording, profile }: { report: FormReport; recording: Recording; profile: FormProfile }) {
+  const [open, setOpen] = useState(false)
+  const [perRep, setPerRep] = useState<Record<number, FaultCode[]>>({})
+  const [reps, setReps] = useState(report.reps.length)
+  const [shared, setShared] = useState(false)
+  const faults = VIEW_FAULTS[report.view]
+  const seen = (rep: number) => report.faults.filter((f) => f.reps.includes(rep)).map((f) => FAULT_TITLE[f.code].toLowerCase())
+  const toggle = (rep: number, code: FaultCode) => setPerRep((cur) => {
+    const list = cur[rep] ?? []
+    return { ...cur, [rep]: list.includes(code) ? list.filter((c) => c !== code) : [...list, code] }
+  })
+
+  async function share() {
+    // Every detected rep is labelled: one with nothing ticked was a good rep.
+    const labels: SampleLabels = { perRep: Object.fromEntries(report.reps.map((r) => [r.rep, perRep[r.rep] ?? []])) }
+    if (reps !== report.reps.length) labels.reps = reps
+    const sample = makeSample(recording, profile, report, labels, __APP_VERSION__)
+    const name = `gymbro-form-${recording.exerciseId}-${recording.view}-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.json`
+    const file = new File([JSON.stringify(sample)], name, { type: 'application/json' })
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'GymBro form sample' }); setShared(true) } catch { /* cancelled */ }
+      return
+    }
+    const url = URL.createObjectURL(file)
+    const a = document.createElement('a')
+    a.href = url; a.download = name; a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    setShared(true)
+  }
+
+  if (!open) return <button className="ghost small" onClick={() => setOpen(true)}>Help tune GymBro: label this set</button>
   return (
-    <button className="ghost small" onClick={async () => {
-      const name = `gymbro-form-${recording.exerciseId}-${recording.view}-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.json`
-      const file = new File([JSON.stringify(recording)], name, { type: 'application/json' })
-      if (navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'GymBro form recording' }) } catch { /* cancelled */ }
-        return
-      }
-      const url = URL.createObjectURL(file)
-      const a = document.createElement('a')
-      a.href = url; a.download = name; a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-    }}>Share body points for tuning (no video)</button>
+    <section className="card stack label-panel">
+      <h2>What really happened?</h2>
+      <p className="muted small">Tick the faults you actually did on each rep (nothing ticked = a good rep). This trains the judgement; only body points are shared, never video.</p>
+      <ol className="plan-items">
+        {report.reps.map((r) => (
+          <li key={r.rep} className="plan-item">
+            <div className="plan-item-main"><strong>Rep {r.rep}</strong><span className="muted small">{seen(r.rep).length ? `GymBro saw: ${seen(r.rep).join(', ')}` : 'GymBro saw: nothing'}</span></div>
+            <div className="chips">
+              {faults.map((code) => {
+                const on = (perRep[r.rep] ?? []).includes(code)
+                return <button key={code} type="button" className={`chip small ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r.rep, code)}>{FAULT_TITLE[code]}</button>
+              })}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <Stepper label="Reps you actually did" value={reps} step={1} min={0} onChange={(v) => setReps(Math.round(v))} />
+      <button onClick={() => void share()}>{shared ? 'Shared ✓ (share again)' : 'Share labelled sample'}</button>
+    </section>
   )
 }
-
 
 const fmtDepth = (d?: number) => (d === undefined ? '–' : `${d > 0 ? '+' : ''}${Math.round(d)}°`)

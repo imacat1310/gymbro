@@ -51,6 +51,12 @@ The heuristic coefficients (lean limit vs femur ratio, thresholds) are **startin
 - **Score** 0–100 = 100 − Σ (weight × severity × share of reps affected); safety faults weigh 3×. A safety fault or score < 60 sets `blockIncrease` (progression hook from Phase 1; wiring it to the tracker is a later rollout step).
 - **Stored:** only the report (score, per-rep metrics, faults). No video and no landmarks by default. A "save recording for tuning" export (landmarks only, via the share sheet) helps tuning with the user's consent.
 
+## Tuning loop (2026-10-13)
+- **Labels:** in-app "label this set" (per rep, unlabelled start so labels are the user's own judgement) → a shared **sample** (`lib/form/sample.ts`: body points, profile, labels, what the app said; no video).
+- **Converter:** `npm run form-convert` turns videos into samples with the same runtime, Lite model and 30 fps as the app, on the Mac GPU. Measured: about 2× the video length on an M1 Pro.
+- **Evaluator:** `FORM_EVAL_DATA=… npm run form-eval` re-runs the analysis with any thresholds (`SquatThresholds`, defaults unchanged) and reports per-fault caught / missed / false alarms, precision, recall and F1, rep-count accuracy, and a sweep of each fault's boundary. A change is suggested only with 5+ labelled reps each way.
+- **Data** (real people's body points, research datasets) stays outside the repository. Threshold changes are recorded here.
+
 ## Consequences
 - Each new exercise needs its own rules and labelled samples. The architecture (`lib/form/`: profile → reps → metrics → faults → tips) is shared.
 - Accuracy is unproven until tested on the user's real sets. Faults ship as "beta" until each reaches the spec's ~0.8 F1 on labelled recordings.

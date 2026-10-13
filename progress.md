@@ -80,6 +80,14 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-13 (tuning loop: labelling + Mac evaluation tools, v0.28.0)
+- **Thresholds as a parameter:** `SquatThresholds` / `DEFAULT_SQUAT_THRESHOLDS` (values unchanged; all 36 form tests pass unchanged).
+- **In-app labelling:** "Help tune GymBro: label this set": per rep, tick the faults that really happened (starts unlabelled, with "GymBro saw…" shown), correct the rep count, then share a labelled sample via the share sheet (body points + profile + labels, no video).
+- **Mac tools (`app/tools/form-eval/`, README):** `form-convert` (videos → samples; Playwright Chromium, Metal GPU, app's MediaPipe and Lite model, 30 fps) and `form-eval` (samples + optional `labels.csv` → `form-eval-report.md`: rep-count accuracy, per-fault caught / missed / false alarms, precision, recall, F1, threshold sweep with suggestions only at 5+ each way).
+- **Verified:** evaluator unit tests (+5, synthetic sets with known truth: perfect agreement, misses and false alarms, clip labels, rep counts, sweep finds the better shallow threshold, thin data flagged); report screen +1. End-to-end tool run on the CC squat-snatch clip (20 s → 598 frames in 42 s) → evaluation report. Unit 331 ✅.
+- **Correction:** real conversion throughput is ~14 fps (~2× video length), not the ~84 fps warm benchmark. Seeking a video file dominates. "~20 min per hour of video" was optimistic; it's about 2 hours per hour of video.
+- Report shows "n/a" instead of 0% when there's no data to score.
+
 ### 2026-10-13 (form check from a camera-roll video, v0.27.0)
 - **"Or analyse a video from your phone"** on the form-check setup: the video is stepped through at 30 fps (the live recording rate, so the same rules and thresholds apply), body points per frame, max 90 s (noted in the report), progress bar and cancel. The video stays on the phone and isn't stored (`lib/form/videoFile.ts`).
 - **E2E:** an unreadable file gets "Couldn't read the video" (runs everywhere). A real video is analysed into a report: local-only, `FORM_VIDEO=…` (a CC BY-SA clip isn't committed). Chromium tests on macOS now use the Metal GPU (software WebGL was ~8× slower). Fixed a test race (database read before the added exercise was saved).

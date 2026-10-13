@@ -1,7 +1,7 @@
 {
   "name": "gymbro",
   "private": true,
-  "version": "0.27.0",
+  "version": "0.28.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,9 @@
     "predev": "node scripts/copy-mediapipe-wasm.mjs && node scripts/copy-ocr-assets.mjs",
     "prebuild": "node scripts/copy-mediapipe-wasm.mjs && node scripts/copy-ocr-assets.mjs",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "form-eval": "vitest run --config tools/form-eval/vitest.config.ts",
+    "form-convert": "node tools/form-eval/convert.mjs"
   },
   "dependencies": {
     "@fontsource/exo-2": "^5.3.0",
