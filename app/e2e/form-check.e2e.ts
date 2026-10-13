@@ -30,12 +30,14 @@ test.describe('camera', () => {
   test.use({ permissions: ['camera'] })
 
   test('guides the user into position and only allows recording when ready', async ({ page }) => {
+    // Loading the pose model on CI's software WebGL is slow.
+    test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
     await page.goto('./#/form/barbell_back_squat')
     await page.getByRole('button', { name: 'Start camera' }).click()
     // The fake camera shows no person: the hint asks them to step in, and Record stays disabled.
-    await expect(page.locator('.hud')).toContainText(/Step into view/, { timeout: 30_000 })
+    await expect(page.locator('.hud')).toContainText(/Step into view/, { timeout: 75_000 })
     await expect(page.getByRole('button', { name: 'Get in position' })).toBeDisabled()
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()

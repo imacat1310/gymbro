@@ -27,6 +27,8 @@ test('a plan workout offers Record on its squat, next to Log', async ({ page }) 
 })
 
 test('Record opens the camera straight away with the weight, and Cancel returns to the workout', async ({ page, browserName }) => {
+  // Loading the pose model on CI's software WebGL is slow.
+  test.setTimeout(90_000)
   await page.getByRole('button', { name: /free workout/i }).click()
   await page.getByRole('button', { name: '+ Add exercise' }).click()
   await page.getByPlaceholder(/search/i).fill('Goblet squat')
@@ -41,7 +43,7 @@ test('Record opens the camera straight away with the weight, and Cancel returns 
   await expect(page.getByRole('button', { name: 'Flip camera' })).toBeVisible()
   if (browserName === 'chromium') {
     // Fake camera, no person: guidance shows and Record waits until in position.
-    await expect(page.locator('.hud')).toContainText(/Step into view/, { timeout: 30_000 })
+    await expect(page.locator('.hud')).toContainText(/Step into view/, { timeout: 75_000 })
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(page).toHaveURL(/#\/workout/)
     await expect(page.locator('article.entry', { hasText: 'Goblet squat' })).toBeVisible()

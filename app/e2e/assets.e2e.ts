@@ -20,6 +20,8 @@ test.describe('pose runtime', () => {
   test.use({ permissions: ['camera'] })
 
   test('loads the WASM runtime and model from versioned, self-hosted paths', async ({ page }) => {
+    // Loading the pose model on CI's software WebGL is slow.
+    test.setTimeout(90_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
     const wasm = page.waitForResponse((r) => /\/gymbro\/mediapipe\/\d+\.\d+\.\d+\/wasm\/vision_wasm_\w+\.wasm$/.test(r.url()))
@@ -29,7 +31,7 @@ test.describe('pose runtime', () => {
     expect((await wasm).status()).toBe(200)
     expect((await model).status()).toBe(200)
     // Running: the stop button replaces start once the camera and model are up.
-    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible({ timeout: 75_000 })
     expect(errors).toEqual([])
   })
 })

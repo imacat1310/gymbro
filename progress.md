@@ -86,6 +86,7 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 - **Layout:** the first side-by-side version wrapped the Log label, and with 102.5 kg the row overflowed and cut off Record. Now a compact 64 px REC button (red dot + label); Log gets the rest, stays on one line and truncates as a last resort. Checked at iPhone width with 24 and 102.5 kg: no overflow.
 - **Tests:** unit 333 ✅ (report: log-from-record button); E2E 24 ✅ in WebKit + Chromium (+6: REC on the squat in a plan workout but not on every exercise; REC → camera directly with kg in the URL, switches shown, Cancel back to the workout; no REC on bench press).
 - **Not testable headless:** the record → report → log path with a real person (covered by unit tests of each piece).
+- **CI fix:** the new camera test plus the existing one, running in parallel on CI's 2-CPU machine with software WebGL, both hit the 30 s per-test limit (v0.29.0's first CI run failed and didn't deploy). E2E now runs one worker in CI, and the three pose-model tests get 90 s.
 
 ### 2026-10-13 (tuning loop: labelling + Mac evaluation tools, v0.28.0)
 - **Thresholds as a parameter:** `SquatThresholds` / `DEFAULT_SQUAT_THRESHOLDS` (values unchanged; all 36 form tests pass unchanged).
