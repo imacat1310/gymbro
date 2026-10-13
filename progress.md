@@ -80,6 +80,21 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-13 (can this Mac run the form-check evaluation? Yes)
+- **Machine:** MacBook Pro M1 Pro (8 CPU cores: 6 performance + 2 efficiency; 14-core GPU, Metal 4), 16 GB RAM, 64 GB free disk, macOS 26.6.
+- **Benchmark:** the app's own MediaPipe 1.1.0 web runtime and models in Playwright's Chromium. Offline batch (seek frame by frame) on a real 640×480 CC BY-SA squat-snatch video (Wikimedia Commons, local scratch only, not committed), 300 frames per run, person found in 100% of frames:
+  | Setting | Median ms/frame | Throughput (incl. decode) |
+  |---|---|---|
+  | Full, GPU (Metal) | 10.2 | ~84 fps (≈2.8× real time) |
+  | Lite, GPU (Metal) | 8.3 | 24 fps (first run, includes video warm-up) |
+  | Full, CPU | 31 | ~31 fps |
+  | Lite, CPU | 19 | ~50 fps |
+  | Lite/Full "GPU" in default headless | 80 / 130 | 9 / 5.5 fps: **software rendering (SwiftShader)** |
+- **Gotcha:** headless Chromium falls back to software WebGL. Batch jobs must launch with `--use-angle=metal --enable-gpu --ignore-gpu-blocklist` (or use the CPU delegate).
+- **Rules analysis:** 5 ms for a 70 s set (2,100 frames), so threshold sweeps over thousands of recordings take minutes. Body-point JSON is ~3.8 MB per minute unrounded (rounding to 4 decimals roughly halves it).
+- **Estimates:** ~20 min of processing per hour of video (Full, GPU). EC3D squats (132 sequences × 4 cameras) is tens of minutes; a few thousand short dataset clips is about an hour.
+- **Parity note:** the app records form checks with the **Lite** model (live). Tuning must use the same model as the app; the Mac can cheaply compare Lite vs Full to decide whether recording should switch to Full.
+
 ### 2026-10-13 (form check v1: squat, personalised by body data, v0.25.0)
 - **Decision (ADR-022, user approved):** on-device rules (AI wording later), analysis after the set, and thresholds and tips adjusted by body data. Spec updated (`features/04-form-check.md`, "Personalisation by body data").
 - **Analysis (`lib/form/`, pure):** reps from hip drop (works from side and front) with hysteresis. Side view: depth (thigh vs parallel), torso lean vs a **personal limit** (45° base, +50° per unit of femur/torso above 0.9, kept within 38–60°, 5° stricter with a lower-back limitation, where it becomes a safety fault), heel rise, active-lowering tempo, fatigue (last 2 reps vs first 2). Front view: knee cave **relative to the user's own standing alignment** (static valgus isn't double counted; stricter when the posture scan found it), sideways hip shift linked to the **weaker leg from InBody**. Knee limitation means depth isn't pushed. Score per spec, top 2 tips, each with a personal "Why for you?", and `blockIncrease`. Says plainly what isn't measured (lumbar rounding, bar path).
