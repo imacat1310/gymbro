@@ -36,3 +36,11 @@
 - Time estimates are conservative (full rest periods). Short sessions trim accessories, and the notes say what was dropped.
 - Changing the training profile doesn't silently change an existing plan; the user rebuilds it.
 - Posture findings (Phase 3) plug in as extra priorities, limitations and corrective warm-ups through the same inputs.
+
+## Revision (2026-10-16): no redundant presses in a session
+**User report:** some push sessions had barbell and dumbbell bench press together at the same angle.
+- **Cause:** accessory slots (the push day's chest accessory, and muscle-priority slots like "Priority: triceps") could pick any compound press. Once the flies were used elsewhere in the week, the variety penalty made a second bench press win. Priority slots also accepted conditioning moves that list the muscle as primary (a burpee for chest).
+- **Rule:** an accessory may not add a compound press at an **angle already in the session** (flat, incline, decline/dips, overhead, landmine; close-grip bench counts as flat), nor a **third horizontal press** (`MAX_PRESSES_PER_DAY = 2`). Changing the angle is still allowed (it's a real variation). Muscle-priority slots never use conditioning, power or agility moves.
+- **Checked:** 16,380 generated days (5 gyms × 2–6 days × 3 goals × 2 levels × every priority muscle × 2 session lengths) went from 124 redundant press days (in the original narrower scan) to 0. A grid test enforces it, and removing the rule makes it fail.
+- **Existing saved plans** keep their exercises until rebuilt or swapped.
+

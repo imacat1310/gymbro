@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { GYM_PRESETS } from '../data/equipment'
 import { EXERCISE_BY_ID, performableExercises } from '../data/exercises'
 import { isContraindicated } from '../data/stress'
-import { buildPlan, chooseSplit, estimateMinutes, substituteForGym, type PlanInput } from './planner'
+import { buildPlan, chooseSplit, estimateMinutes, MAX_PRESSES_PER_DAY, pressAngle, PRIORITY_CHOICES, redundantPress, substituteForGym, type PlanInput } from './planner'
 import { BEGINNER_RPE_CAP } from './targets'
 
 const preset = (id: string) => GYM_PRESETS.find((p) => p.id === id)!.equipment
@@ -110,4 +110,44 @@ describe('substituteForGym', () => {
 
 describe('estimateMinutes', () => {
   it('includes warm-up time', () => expect(estimateMinutes([])).toBe(5))
+})
+
+describe('no redundant presses in a session (user report: barbell + dumbbell bench, same angle)', () => {
+  const ex = (id: string) => EXERCISE_BY_ID.get(id)!
+  it('press angles: flat, incline, dips, overhead', () => {
+    expect(pressAngle(ex('barbell_bench_press'))).toBe('flat')
+    expect(pressAngle(ex('db_bench_press'))).toBe('flat')
+    expect(pressAngle(ex('close_grip_bench'))).toBe('flat')
+    expect(pressAngle(ex('incline_db_press'))).toBe('incline')
+    expect(pressAngle(ex('dip'))).toBe('decline')
+    expect(pressAngle(ex('seated_db_press'))).toBe('overhead')
+    expect(pressAngle(ex('cable_fly'))).toBeUndefined()
+  })
+  it('an accessory may change angle but not repeat it, and never adds a third horizontal press', () => {
+    expect(redundantPress(ex('db_bench_press'), [ex('barbell_bench_press')])).toBe(true)
+    expect(redundantPress(ex('incline_db_press'), [ex('barbell_bench_press')])).toBe(false)
+    expect(redundantPress(ex('dip'), [ex('barbell_bench_press'), ex('incline_db_press')])).toBe(true)
+    expect(redundantPress(ex('cable_fly'), [ex('barbell_bench_press'), ex('incline_db_press')])).toBe(false)
+    expect(MAX_PRESSES_PER_DAY).toBe(2)
+  })
+
+  it('holds across gyms, schedules and every priority muscle', () => {
+    const problems: string[] = []
+    for (const gym of GYM_PRESETS) for (const daysPerWeek of [3, 4, 5, 6]) for (const experience of ['beginner', 'intermediate'] as const)
+      for (const m of [undefined, ...PRIORITY_CHOICES]) {
+        const plan = buildPlan({ ...base, profile: { ...base.profile, experience }, daysPerWeek, equipment: gym.equipment, priorities: m ? [m] : [] })
+        for (const d of plan.days) {
+          const angles = d.items.map((i) => pressAngle(EXERCISE_BY_ID.get(i.exerciseId)!)).filter(Boolean)
+          const horizontal = angles.filter((a) => a === 'flat' || a === 'incline' || a === 'decline').length
+          const where = `${gym.id} ${daysPerWeek}d ${experience} ${m ?? '-'} ${d.name}`
+          if (angles.length !== new Set(angles).size) problems.push(`${where}: same press angle twice`)
+          if (horizontal > MAX_PRESSES_PER_DAY) problems.push(`${where}: ${horizontal} horizontal presses`)
+          for (const i of d.items) {
+            const pattern = EXERCISE_BY_ID.get(i.exerciseId)!.pattern
+            if (i.reason.startsWith('Priority') && ['conditioning', 'power', 'agility'].includes(pattern)) problems.push(`${where}: ${i.exerciseId} as a muscle priority`)
+          }
+        }
+      }
+    expect(problems).toEqual([])
+  })
 })

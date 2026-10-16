@@ -80,6 +80,12 @@ Record decisions that would be hard to reverse, so the reasoning isn't lost.
 
 ## Log
 
+### 2026-10-16 (no redundant presses in a session, v0.30.1)
+- **User report:** barbell and dumbbell bench in the same push session at the same angle. Reproduced: 124 of 3,510 generated days had 2+ horizontal compound presses, including same-angle pairs (machine chest press + barbell bench as "Priority: triceps"; incline + DB bench + dips).
+- **Cause and fix:** see ADR-005 revision. Accessory and priority slots no longer repeat a press angle or add a third horizontal press. Fixing it exposed **burpees picked as "Priority: chest"**, so priority slots now exclude conditioning, power and agility.
+- **Verified:** 16,380-day scan: 0 same-angle, 0 over two horizontal presses, 0 non-muscle priority picks. Example push day now: incline barbell, seated DB press, flat DB bench (different angle), lateral raise, skull crusher, cable fly (priority chest). 3 new tests (angles, rule, grid invariant); mutation check passes. Unit 362 ✅.
+- **Note for the user:** saved plans change only when rebuilt (Plan → Change preferences and rebuild) or swapped.
+
 ### 2026-10-16 (pelvic tilt from hip stickers + corrective pool check, v0.30.0)
 - **Feasibility answer to the user:** pelvic tilt yes (with markers), scapular winging only roughly (movement test, low confidence, later), muscle insertions no (not measurable from photos, and not trainable).
 - **Pelvic tilt (ADR-023):** optional stickers on the front (ASIS) and back (PSIS) hip points. After each side photo, "Mark them for pelvic tilt" opens a zoomed crop of the hip (from the in-memory review photo, which is still discarded); tap front then back; the live angle is shown with "most people: 5–15° forward". Only the two points are stored (`ViewCapture.pelvis`). The angle is corrected for phone roll and averaged over both side views (confidence rises on agreement, falls on disagreement). Findings: forward tilt above 16° (moderate > 20°, marked > 25°) and backward tilt; 5–15° is reported but not flagged. Without stickers, a note explains how to measure it. Shown on the report's side-view body diagram (hip marker).

@@ -186,6 +186,34 @@ function candidates(slot: Slot, pool: Exercise[]): Exercise[] {
   return preferred.length ? preferred : byPattern
 }
 
+/**
+ * Press angle for compound pushing. Two compound presses at the same angle in one session are redundant (barbell +
+ * dumbbell flat bench); a different angle (flat → incline → dips) is a real variation.
+ */
+export function pressAngle(e: Exercise): 'flat' | 'incline' | 'decline' | 'landmine' | 'overhead' | undefined {
+  if (e.mechanics !== 'compound') return undefined
+  if (e.pattern === 'v_push') return e.id === 'landmine_press' ? 'landmine' : 'overhead'
+  if (e.pattern !== 'h_push' && e.id !== 'close_grip_bench') return undefined
+  if (e.id.includes('incline')) return 'incline'
+  if (e.id === 'dip') return 'decline'
+  return 'flat'
+}
+
+/** Patterns that never fill a muscle-priority slot (conditioning, power and agility train qualities, not a muscle). */
+const NOT_FOR_PRIORITY: Pattern[] = ['conditioning', 'power', 'agility']
+
+/** Horizontal presses per session, whatever the angle (more is junk volume for the same muscles). */
+export const MAX_PRESSES_PER_DAY = 2
+
+/** An accessory may not repeat a press angle already in the session, nor add a third horizontal press. */
+export function redundantPress(e: Exercise, day: Exercise[]): boolean {
+  const angle = pressAngle(e)
+  if (!angle) return false
+  if (day.some((x) => pressAngle(x) === angle)) return true
+  const horizontal = (x: Exercise) => { const a = pressAngle(x); return a === 'flat' || a === 'incline' || a === 'decline' }
+  return horizontal(e) && day.filter(horizontal).length >= MAX_PRESSES_PER_DAY
+}
+
 function pick(slot: Slot, pool: Exercise[], input: PlanInput, used: Set<string>, bodyweightGym: boolean) {
   const ranked = candidates(slot, pool)
     .map((e) => ({ e, s: score(e, slot, input, used, bodyweightGym) }))
@@ -466,14 +494,19 @@ export function buildPlan(input: PlanInput): Plan {
     for (const { muscle: m, reason } of weak) {
       const region = UPPER_MUSCLES.includes(m) ? 'upper' : LOWER_MUSCLES.includes(m) ? 'lower' : 'full'
       if (tpl.region !== 'full' && region !== 'full' && region !== tpl.region) continue
-      const patterns = [...new Set(pool.filter((e) => e.primary.includes(m)).map((e) => e.pattern))]
+      // Muscle-building patterns only: a burpee or a jump lists chest or quads as prime movers, but it isn't the
+      // targeted work a weak point needs.
+      const patterns = [...new Set(pool.filter((e) => e.primary.includes(m) && !NOT_FOR_PRIORITY.includes(e.pattern)).map((e) => e.pattern))]
       if (patterns.length) slots.push({ patterns, role: 'accessory', prefer: [m], reason })
     }
 
     const items: PlanItem[] = []
     const dayUsed = new Set<string>()
     for (const slot of slots) {
-      const choice = pick(slot, pool.filter((e) => !dayUsed.has(e.id)), input, used, bodyweightGym)
+      // Accessories (template accessories and priority-muscle slots) never repeat a press already in the session:
+      // with the flies used up elsewhere in the week, they pick a different angle or skip, not a second bench press.
+      const today = items.map((i) => EXERCISE_BY_ID.get(i.exerciseId)!)
+      const choice = pick(slot, pool.filter((e) => !dayUsed.has(e.id) && (slot.role !== 'accessory' || !redundantPress(e, today))), input, used, bodyweightGym)
       if (!choice) continue
       dayUsed.add(choice.exercise.id)
       used.add(choice.exercise.id)
