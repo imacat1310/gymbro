@@ -26,17 +26,19 @@ export interface BodyPlanInput {
 }
 
 /** Finding → corrective options, in order of preference (features/02-posture-scan.md mapping table). */
-const CORRECTIVES: Record<FindingCode, string[]> = {
-  forward_head: ['chin_tuck'],
+export const CORRECTIVES: Record<FindingCode, string[]> = {
+  forward_head: ['chin_tuck', 'upper_trap_stretch'],
   rounded_shoulders: ['doorway_pec_stretch', 'wall_slide', 'prone_y_raise', 'thoracic_extension'],
   shoulder_height_asymmetry: ['suitcase_carry', 'side_plank'],
-  lateral_trunk_shift: ['side_plank', 'copenhagen_plank', 'suitcase_carry'],
-  pelvic_height_asymmetry: ['side_plank', 'banded_lateral_walk', 'glute_bridge'],
-  head_tilt: ['chin_tuck'],
-  knee_valgus_static: ['banded_lateral_walk', 'glute_bridge'],
-  knee_varus_static: [],
-  knee_hyperextension: ['glute_bridge'],
+  lateral_trunk_shift: ['side_plank', 'standing_side_stretch', 'copenhagen_plank', 'suitcase_carry'],
+  pelvic_height_asymmetry: ['side_plank', 'standing_side_stretch', 'banded_lateral_walk', 'glute_bridge'],
+  head_tilt: ['chin_tuck', 'upper_trap_stretch'],
+  knee_valgus_static: ['banded_lateral_walk', 'ankle_dorsiflexion', 'glute_bridge', 'adductor_rockback'],
+  knee_varus_static: ['copenhagen_plank', 'side_lying_hip_abduction'],
+  knee_hyperextension: ['lying_leg_curl', 'seated_leg_curl', 'glute_bridge', 'single_leg_balance'],
   shoulder_forward_asymmetry: ['doorway_pec_stretch', 'band_external_rotation', 'prone_y_raise'],
+  anterior_pelvic_tilt: ['couch_stretch', 'pelvic_tilt_drill', 'dead_bug', 'glute_bridge'],
+  posterior_pelvic_tilt: ['hamstring_stretch', 'pelvic_tilt_drill', 'bird_dog'],
 }
 /** Symmetric core work after a trunk-rotation reading in the re-test band (ADR-010: no side-specific advice). */
 const TRUNK_CORRECTIVES = ['pallof_press', 'bird_dog', 'side_plank']

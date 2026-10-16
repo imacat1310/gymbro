@@ -116,6 +116,8 @@ export interface ViewCapture {
   spread: number
   /** Side view only: which side faced the camera. */
   nearSide?: 'left' | 'right'
+  /** Side view only, optional: stickers on the front (ASIS) and back (PSIS) hip points, tapped by the user. Normalized raw-frame coordinates (ADR-023). */
+  pelvis?: { front: { x: number; y: number }; back: { x: number; y: number } }
 }
 
 export interface PostureScan {

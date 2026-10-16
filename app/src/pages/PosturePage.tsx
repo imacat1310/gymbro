@@ -54,6 +54,11 @@ export function PosturePage() {
           <li>Stand the phone upright at hip height, 2.5–3 m away (lean it against something steady).</li>
           <li>Pick a plain background with good light in front of you.</li>
           <li>Stand relaxed, feet hip-width, arms by your sides. The app talks you into position and takes the photo by itself.</li>
+          <li>
+            <strong>Optional, for pelvic tilt:</strong> put a small sticker (or a dot of tape) on the bony point at the front of your
+            hip, just below the waist, and one on the dimple above your buttock on the same side. Someone helping makes the back
+            one easier. After each side photo you tap the two stickers.
+          </li>
         </ul>
         <p className="muted small">
           Privacy: photos never leave this phone and are not saved. Only 33 body points per view are kept.

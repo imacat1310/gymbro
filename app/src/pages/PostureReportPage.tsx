@@ -162,6 +162,7 @@ function BodyDiagram({ scan, findings }: { scan: PostureScan; findings: Finding[
       markers: [
         [[LM.leftEar, LM.rightEar], sev('forward_head')],
         [[LM.leftShoulder, LM.rightShoulder], sev(['rounded_shoulders', 'shoulder_forward_asymmetry'])],
+        [[LM.leftHip, LM.rightHip], sev(['anterior_pelvic_tilt', 'posterior_pelvic_tilt'])],
         [[LM.leftKnee, LM.rightKnee], sev('knee_hyperextension')],
       ],
     })

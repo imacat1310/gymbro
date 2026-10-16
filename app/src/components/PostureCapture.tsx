@@ -11,6 +11,8 @@ import {
 } from '../lib/capture'
 import { useWakeLock } from '../lib/hooks'
 import { createPoseEngine, type PoseEngine } from '../lib/pose'
+import { pelvicTiltDeg } from '../lib/posture'
+import { PelvisMarker } from './PelvisMarker'
 
 type Phase = 'loading' | 'live' | 'countdown' | 'grabbing' | 'processing' | 'review' | 'error'
 export type Facing = 'user' | 'environment'
@@ -26,6 +28,8 @@ const SAY_AGAIN_MS = 6000
 
 interface Review {
   canvas: HTMLCanvasElement
+  /** The same frame without the skeleton, for tapping the hip stickers (ADR-023). */
+  photo: HTMLCanvasElement
   capture: ViewCapture
   tracked: number
 }
@@ -61,6 +65,7 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
   const [count, setCount] = useState(0)
   const [error, setError] = useState('')
   const [review, setReview] = useState<Review | null>(null)
+  const [marking, setMarking] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -300,11 +305,15 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
 
     // The middle frame, with the Full-model skeleton, is shown for review and then discarded.
     const shown = poses[Math.floor(poses.length / 2)].frame
+    const photo = document.createElement('canvas')
+    photo.width = shown.width
+    photo.height = shown.height
+    photo.getContext('2d')!.drawImage(shown, 0, 0)
     const drawer = engines.still.createDrawer(shown.getContext('2d')!)
     drawer.drawConnectors(landmarks, engines.still.connections, { color: '#22c55e', lineWidth: Math.max(3, shown.width / 200) })
     drawer.drawLandmarks(landmarks, { color: '#f8fafc', radius: Math.max(3, shown.width / 250) })
     burstRef.current = { frames: [], tilt: null, lastAt: 0 }
-    setReview({ canvas: shown, capture, tracked: poses.length })
+    setReview({ canvas: shown, photo, capture, tracked: poses.length })
     setPhase('review')
     void beep(2)
     say('Got it. Check the photo.')
@@ -318,12 +327,14 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
 
   function retake() {
     setReview(null)
+    setMarking(false)
     setPhase('live')
     say(VIEW_LABELS[viewRef.current].instruction)
   }
 
   function accept() {
     if (!review) return
+    setMarking(false)
     resultsRef.current = { ...resultsRef.current, [viewRef.current]: review.capture }
     setReview(null)
     advance()
@@ -354,6 +365,7 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
     : firstHint(checks) ?? (checks.length && readyToCapture(checks) && !still ? 'Hold still' : '')
   const mirrored = facing === 'user' ? 'mirrored' : ''
   const level = review?.capture.tilt
+  const reviewTilt = review?.capture.pelvis ? pelvicTiltDeg(review.capture, facing) : undefined
 
   return (
     <div className="capture" role="dialog" aria-label="Posture capture">
@@ -396,13 +408,25 @@ export function PostureCapture({ facing, voice, onDone, onCancel }: Props) {
             </ul>
           </>
         )}
-        {review && phase === 'review' && (
+        {review && phase === 'review' && marking && (
+          <PelvisMarker photo={review.photo} capture={review.capture} camera={facing} mirrored={facing === 'user'}
+            onCancel={() => setMarking(false)}
+            onDone={(pelvis) => { setReview({ ...review, capture: { ...review.capture, pelvis } }); setMarking(false) }} />
+        )}
+        {review && phase === 'review' && !marking && (
           <>
             <p className="small">
               Body tracked in {review.tracked}/{BURST} frames · {steadiness(review.capture.spread)}
               {level ? ` · phone tilt ${Math.abs(level.rollDeg).toFixed(1)}° sideways` : ' · phone level not measured'}
             </p>
             <p className="muted small">Check that the skeleton follows your body. The photo is not saved: only these points are.</p>
+            {isSideView(view) && (
+              <button className="ghost small" onClick={() => setMarking(true)}>
+                {reviewTilt !== undefined
+                  ? `Hip stickers marked: ${Math.abs(reviewTilt).toFixed(0)}° ${reviewTilt >= 0 ? 'forward' : 'backward'} · change`
+                  : 'Wearing hip stickers? Mark them for pelvic tilt (optional)'}
+              </button>
+            )}
             <div className="row">
               <button className="secondary" onClick={retake}>Retake</button>
               <button onClick={accept}>{viewIdx + 1 < VIEW_ORDER.length ? 'Next view' : 'Save scan'}</button>

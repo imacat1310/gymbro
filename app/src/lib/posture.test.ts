@@ -26,7 +26,8 @@ describe('analyzeScan: a well-aligned person', () => {
   })
   it('no referral; the only note asks for the right side', () => {
     expect(r.referral).toBeUndefined()
-    expect(r.notes).toEqual([expect.stringMatching(/Only one side was scanned/)])
+    // Plus the pelvic-tilt hint, since this scan has no hip stickers (ADR-023).
+    expect(r.notes).toEqual([expect.stringMatching(/Only one side was scanned/), expect.stringMatching(/Pelvic tilt wasn.t measured/)])
   })
   it('proportions: femur/torso and shoulder/hip', () => {
     // Thigh 0.24 H vs torso 0.30 H; shoulders 40 cm vs hips 20 cm apart.
@@ -190,7 +191,8 @@ describe('right side view (optional 4th view)', () => {
     const a = find(r.findings, 'shoulder_forward_asymmetry')!
     expect(a.severity).toBe('none')
     expect(find(r.findings, 'rounded_shoulders')!.views).toEqual(['side', 'side_right'])
-    expect(r.notes).toEqual([])
+    // Only the pelvic-tilt hint: no stickers in this scan (ADR-023).
+    expect(r.notes).toEqual([expect.stringMatching(/Pelvic tilt wasn.t measured/)])
   })
   it('right shoulder 3.5 cm further forward → possible asymmetry on the right', () => {
     const b = body(); b.pts[LM.rightShoulder].f += 3.5

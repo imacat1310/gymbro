@@ -387,3 +387,10 @@ button:disabled { opacity: 0.5; }
 /* Compact so the Log label keeps its room: a red dot over a short label. */
 .log-row .record-btn { flex: 0 0 64px; min-height: 52px; padding: 0 4px; flex-direction: column; gap: 2px; font-size: 0.7rem; letter-spacing: 0.04em; }
 .record-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--error); }
+
+/* Pelvic tilt marking (ADR-023) */
+.pelvis-crop { display: block; width: 100%; max-width: 420px; margin: 0 auto; border-radius: 8px; touch-action: none; cursor: crosshair; }
+.pelvis-crop.mirrored { transform: scaleX(-1); }
+.pelvis-marker .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+.pelvis-marker .dot.front { background: #f43f5e; }
+.pelvis-marker .dot.back { background: #facc15; }

@@ -11,7 +11,7 @@ export type Side = 'left' | 'right'
 export type FindingCode =
   | 'shoulder_height_asymmetry' | 'pelvic_height_asymmetry' | 'lateral_trunk_shift' | 'head_tilt'
   | 'knee_valgus_static' | 'knee_varus_static' | 'forward_head' | 'rounded_shoulders' | 'knee_hyperextension'
-  | 'shoulder_forward_asymmetry'
+  | 'shoulder_forward_asymmetry' | 'anterior_pelvic_tilt' | 'posterior_pelvic_tilt'
 
 export interface Finding {
   code: FindingCode
@@ -58,6 +58,9 @@ const THRESHOLDS: Record<FindingCode, { at: [number, number, number]; below?: tr
   knee_hyperextension: { at: [185, 190, 195] },
   // One shoulder further forward than the other, left vs right side photos (GymBro convention, no validated cut-off).
   shoulder_forward_asymmetry: { at: [2, 3, 4] },
+  // ADR-023: most people tilt forward 5–15°, so that range isn't flagged. Posterior = front point higher than back.
+  anterior_pelvic_tilt: { at: [16, 20, 25] },
+  posterior_pelvic_tilt: { at: [0, 5, 10] },
 }
 
 /** How far each metric can be trusted from 2D landmarks alone, before per-scan quality. */
@@ -72,6 +75,8 @@ const RELIABILITY: Record<FindingCode, number> = {
   rounded_shoulders: 0.6,
   forward_head: 0.55, // uses the shoulder instead of C7: an approximation (spec)
   shoulder_forward_asymmetry: 0.55, // two separate photos, standing and distance can differ between them
+  anterior_pelvic_tilt: 0.7, // sticker-based; placement (palpation) is the main error
+  posterior_pelvic_tilt: 0.7,
 }
 
 export function grade(code: FindingCode, value: number): Severity {
@@ -100,6 +105,27 @@ export function uprightPoints(cap: ViewCapture, camera: 'user' | 'environment'):
     const x = l.x * cap.width - cx, y = l.y * cap.height - cy
     return { x: x * cos - y * sin + cx, y: x * sin + y * cos + cy, v: l.visibility }
   })
+}
+
+/** One normalized raw-frame point rotated upright like uprightPoints (pixels). */
+function uprightPoint(cap: ViewCapture, camera: 'user' | 'environment', p: { x: number; y: number }): { x: number; y: number } {
+  const roll = cap.tilt?.rollDeg ?? 0
+  const t = ((camera === 'user' ? roll : -roll) * Math.PI) / 180
+  const cx = cap.width / 2, cy = cap.height / 2
+  const x = p.x * cap.width - cx, y = p.y * cap.height - cy
+  return { x: x * Math.cos(t) - y * Math.sin(t) + cx, y: x * Math.sin(t) + y * Math.cos(t) + cy }
+}
+
+/**
+ * Sagittal pelvic tilt in degrees from the two hip stickers (ADR-023): the front–back line against horizontal,
+ * corrected for phone roll. Positive = anterior (front point lower). Undefined without markers.
+ */
+export function pelvicTiltDeg(cap: ViewCapture, camera: 'user' | 'environment'): number | undefined {
+  if (!cap.pelvis) return undefined
+  const f = uprightPoint(cap, camera, cap.pelvis.front), b = uprightPoint(cap, camera, cap.pelvis.back)
+  const run = Math.abs(f.x - b.x)
+  if (run < 1) return undefined
+  return (Math.atan2(f.y - b.y, run) * 180) / Math.PI
 }
 
 /** cm per pixel from the user's height and the crown-to-heel span (crown estimated above the face). */
@@ -253,6 +279,26 @@ export function analyzeScan(scan: PostureScan): PostureReport {
   const valgus = findings.find((f) => f.code === 'knee_valgus_static'), varus = findings.find((f) => f.code === 'knee_varus_static')
   if (valgus && varus) findings.splice(findings.indexOf(valgus.value >= varus.value ? varus : valgus), 1)
 
+  // Pelvic tilt from stickers (ADR-023): average the side views that have them.
+  const tilts = (['side', 'side_right'] as const)
+    .map((v) => ({ v, cap: scan.views[v] }))
+    .filter((x): x is { v: 'side' | 'side_right'; cap: ViewCapture } => !!x.cap)
+    .map((x) => ({ ...x, deg: pelvicTiltDeg(x.cap, scan.camera) }))
+    .filter((x): x is { v: 'side' | 'side_right'; cap: ViewCapture; deg: number } => x.deg !== undefined)
+  if (tilts.length) {
+    const deg = tilts.reduce((a, t) => a + t.deg, 0) / tilts.length
+    const code: FindingCode = deg >= 0 ? 'anterior_pelvic_tilt' : 'posterior_pelvic_tilt'
+    let conf = Math.max(...tilts.map((t) => {
+      const hip = t.cap.landmarks[t.cap.nearSide === 'right' ? LM.rightHip : LM.leftHip]
+      return confidence(code, hip?.visibility ?? 0, t.cap)
+    }))
+    if (tilts.length === 2) conf = Math.abs(tilts[0].deg - tilts[1].deg) <= 4 ? Math.min(1, conf + 0.1) : conf * 0.6
+    const value = Math.abs(deg)
+    findings.push({ code, value: r1(value), unit: '°', severity: grade(code, value), confidence: Math.round(conf * 100) / 100, views: tilts.map((t) => t.v) })
+  } else if (scan.views.side || scan.views.side_right) {
+    notes.push('Pelvic tilt wasn\'t measured: put stickers on the front and back hip points before the side photo, then tap them on the review screen.')
+  }
+
   const front = scan.views.front
   if (front) {
     const pts = uprightPoints(front, scan.camera)
@@ -283,6 +329,18 @@ export function referralFor(findings: Finding[]): string | undefined {
 
 /** Plain-language text and the training response per finding (spec mapping table). */
 export const FINDING_INFO: Record<FindingCode, { title: string; metric: string; what: string; response: string; tentative?: true }> = {
+  anterior_pelvic_tilt: {
+    title: 'Pelvis tilted forward',
+    metric: 'Pelvic tilt (front point lower)',
+    what: 'The front of the pelvis sits lower than the back, measured from your two hip stickers. Most people tilt forward 5–15°; above about 16° is a tendency worth balancing, not a problem on its own.',
+    response: 'Hip-flexor stretches, glute and deep-core work (glute bridges, dead bugs) and a pelvic-tilt drill to feel the range.',
+  },
+  posterior_pelvic_tilt: {
+    title: 'Pelvis tilted backward',
+    metric: 'Pelvic tilt (front point higher)',
+    what: 'The front of the pelvis sits higher than the back (a flatter lower back), measured from your two hip stickers. Less common than a forward tilt.',
+    response: 'Hamstring stretches, a pelvic-tilt drill, and back-extensor control such as bird dogs.',
+  },
   shoulder_height_asymmetry: {
     title: 'Uneven shoulder height',
     metric: 'Shoulder height difference',
@@ -352,6 +410,8 @@ export const FINDING_INFO: Record<FindingCode, { title: string; metric: string; 
  * Muscle ids match the exercise database, so the plan builder can use them as priorities.
  */
 export const FINDING_MUSCLES: Record<FindingCode, { strengthen: Muscle[]; stretch: string[] }> = {
+  anterior_pelvic_tilt: { strengthen: ['glutes', 'abs'], stretch: ['Hip flexors (front of the hip)', 'Quads'] },
+  posterior_pelvic_tilt: { strengthen: ['hip_flexors', 'lower_back'], stretch: ['Hamstrings'] },
   forward_head: { strengthen: ['neck', 'lower_trap', 'upper_back'], stretch: ['Upper traps / side of the neck', 'Chest'] },
   rounded_shoulders: { strengthen: ['rear_delt', 'lower_trap', 'upper_back'], stretch: ['Chest (pecs)', 'Front of the shoulders'] },
   shoulder_height_asymmetry: { strengthen: ['lower_trap', 'obliques'], stretch: [] },

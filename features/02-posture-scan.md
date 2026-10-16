@@ -26,8 +26,8 @@ Photo ─► quality check ─► MediaPipe Pose (33 landmarks) ─► metric ca
 | `forward_head` | Side | Craniovertebral angle (ear–C7 approximated via ear–shoulder vs horizontal) | < 50° / < 45° / < 40° |
 | `rounded_shoulders` | Side | Acromion position anterior of plumb line through ear/hip | > 2 / 4 / 6 cm (scaled by height) |
 | `thoracic_kyphosis_tendency` | Side | Upper back curvature from contour (v2) | — |
-| `anterior_pelvic_tilt` | Side | ASIS–PSIS approximation from hip landmark + contour | > 10° / 15° / 20° |
-| `posterior_pelvic_tilt` | Side | as above | < 0° |
+| `anterior_pelvic_tilt` | Side | **Two stickers (ASIS, PSIS) tapped on a zoomed crop**, line vs horizontal, roll-corrected ([ADR-023](../decisions/ADR-023-pelvic-tilt.md)) | > 16° / 20° / 25° (5–15° is typical, not flagged) |
+| `posterior_pelvic_tilt` | Side | as above, front sticker higher than back | > 0° / 5° / 10° |
 | `knee_hyperextension` | Side | Hip–knee–ankle angle | > 185° |
 | `shoulder_height_asymmetry` | Front/Back | Left vs right shoulder Y difference | > 1 / 2 / 3 cm |
 | `pelvic_height_asymmetry` | Front/Back | Left vs right hip Y difference | > 1 / 1.5 / 2.5 cm |

@@ -277,6 +277,17 @@ export const EXERCISES: Exercise[] = [
     ['Long lunge, elbow to instep', 'Rotate and reach to the ceiling'], { measure: 'time', unilateral: true }),
   ex('ankle_dorsiflexion', 'Knee-to-wall ankle mobilisation', 'corrective', 'isolation', 'bodyweight', NONE, ['calves'],
     ['Heel stays down', 'Drive the knee over the little toes'], { measure: 'time', unilateral: true }),
+  // Added with the pelvic-tilt measurement (ADR-023): every posture finding's advice now has an exercise.
+  ex('hamstring_stretch', 'Hamstring stretch (heel on a step)', 'corrective', 'isolation', 'bodyweight', NONE, ['hamstrings'],
+    ['Heel on a low step, leg straight', 'Hinge from the hips with a flat back until you feel the back of the thigh'], { measure: 'time', unilateral: true }),
+  ex('pelvic_tilt_drill', 'Pelvic tilt drill', 'corrective', 'isolation', 'bodyweight', NONE, ['abs', 'glutes'],
+    ['On your back, knees bent', 'Slowly flatten your lower back into the floor, then arch gently', 'Move the pelvis, not the ribs']),
+  ex('upper_trap_stretch', 'Upper trap stretch', 'corrective', 'isolation', 'bodyweight', NONE, ['neck'],
+    ['Sit tall, hold the seat with one hand', 'Tilt your ear toward the other shoulder; no pulling with the free hand'], { measure: 'time', unilateral: true }),
+  ex('adductor_rockback', 'Adductor rock-back', 'corrective', 'isolation', 'bodyweight', NONE, ['adductors'],
+    ['On hands and knees, one leg straight out to the side', 'Push the hips back until you feel the inner thigh'], { measure: 'time', unilateral: true }),
+  ex('standing_side_stretch', 'Standing side stretch', 'corrective', 'isolation', 'bodyweight', NONE, ['obliques'],
+    ['Feet together, arm overhead', 'Lean sideways from the waist; hips stay over the feet'], { measure: 'time', unilateral: true }),
 
   // Power: jumps and throws. Quality over fatigue: few reps, full rest, maximum intent.
   ex('box_jump', 'Box jump', 'power', 'compound', 'bodyweight', [['box']], ['quads', 'glutes'],
